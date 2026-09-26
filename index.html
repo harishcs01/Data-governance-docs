@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataGovern Documentation</title>
+<meta name="description" content="Documentation for DataGovern — an open-source governance catalog for business data assets and AI assets.">
+<link rel="stylesheet" href="assets/docs.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <button class="icon-btn menu-btn" data-menu-toggle aria-expanded="false" aria-label="Open navigation">☰</button>
+  <a class="brand" href="index.html"><span class="mark">DG</span> DataGovern <small>Documentation</small></a>
+  <nav class="topnav">
+    <a href="index.html" aria-current="page">Overview</a>
+    <a href="install.html">Install &amp; operate</a>
+    <a href="features.html">Features</a>
+    <a href="usage.html">Using the product</a>
+    <a href="../README.md">README</a>
+    <button class="icon-btn" data-theme-toggle type="button">☾</button>
+  </nav>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <h4>Start here</h4>
+    <a href="#what">What DataGovern is</a>
+    <a href="#problem">The problem it solves</a>
+    <a href="#catalogs">The two catalogs</a>
+    <a href="#concepts">Core concepts</a>
+    <a href="#lifecycle">The life of an object</a>
+    <a href="#roles">Who does what</a>
+    <a href="#architecture">How it is put together</a>
+    <a href="#running">Running and deploying it</a>
+    <a href="#map">Documentation map</a>
+    <a href="#glossary">Glossary</a>
+
+    <h4>Install &amp; operate</h4>
+    <a href="install.html">Installation guide</a>
+    <a href="install.html#prod-architecture">Deployed architecture</a>
+    <a href="install.html#vite">Where Vite went</a>
+    <a href="install.html#checking-prod">Checking the services</a>
+    <a href="install.html#logs">Where every log is</a>
+    <a href="install.html#admin-daily">Administration</a>
+    <a href="install.html#install-faq">Install troubleshooting</a>
+
+    <h4>Reference</h4>
+    <a href="features.html">Feature reference</a>
+    <a href="features.html#data-catalog">Data catalog facets</a>
+    <a href="features.html#ai-catalog">AI catalog facets</a>
+    <a href="features.html#relationships">Relationships</a>
+    <a href="features.html#search">Search &amp; export</a>
+    <a href="features.html#governance">Governance &amp; audit</a>
+    <a href="features.html#api">API surface</a>
+
+    <h4>Guides</h4>
+    <a href="usage.html">Using the product</a>
+    <a href="usage.html#first-run">First run</a>
+    <a href="usage.html#register-data">Registering data assets</a>
+    <a href="usage.html#register-ai">Registering AI assets</a>
+    <a href="usage.html#pii-walkthrough">Worked example: PII exposure</a>
+    <a href="usage.html#change-requests">Change requests</a>
+    <a href="usage.html#faq">Troubleshooting &amp; FAQ</a>
+  </aside>
+
+  <main class="content">
+
+    <div class="hero">
+      <h1>DataGovern documentation</h1>
+      <p class="lede">An open-source governance catalog for two kinds of asset that used to live in
+      different spreadsheets: the <strong>business data assets</strong> an organisation runs on, and the
+      <strong>AI assets</strong> — agents, models, endpoints, knowledge bases, MCP servers, tools and
+      prompts — that now read and write them.</p>
+      <p>Everything in the catalog sits on one set of machinery. An AI agent gets the same detail page,
+      the same change-request workflow, the same approvals, the same audit trail, the same relationship
+      graph and the same Excel export a database table does. Nothing special-cases the AI half.</p>
+      <div class="stat-row">
+        <div class="stat"><b>17</b><span>object types</span></div>
+        <div class="stat"><b>141</b><span>relationship types</span></div>
+        <div class="stat"><b>55</b><span>cross-catalog edges</span></div>
+        <div class="stat"><b>16</b><span>steward roles</span></div>
+        <div class="stat"><b>2</b><span>processes deployed</span></div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <a class="card link" href="features.html">
+        <div class="kicker">Reference</div>
+        <h3>Features</h3>
+        <p>Every object type field by field, every enum value, every relationship type, how search is
+        scored, how approvals are routed, what the audit trail records.</p>
+      </a>
+      <a class="card link" href="usage.html">
+        <div class="kicker">Guide</div>
+        <h3>Using the product</h3>
+        <p>Sign in, set up stewards, register your first system, wire an agent to the data it can
+        reach, raise and approve changes, answer an auditor.</p>
+      </a>
+    </div>
+
+    <h2 id="what">What DataGovern is</h2>
+
+    <p>DataGovern is a web application that keeps a single, searchable, governed inventory of the
+    things an organisation's data estate is made of, and of the AI that operates on it. It is inspired
+    by the commercial governance suites — Informatica CDGC, Collibra, Axon, Enterprise Data Catalog —
+    with an AI catalog modelled on OpenMetadata 2.0 and Collibra AI Governance,
+    and it is built to be run by a team that does not have an enterprise licence.</p>
+
+    <p>Three things make it more than a list:</p>
+
+    <ul>
+      <li><strong>Typed relationships.</strong> The catalog records not just <em>that</em> two objects
+      are related but <em>how</em>: a dataset is <em>derived from</em> another, a knowledge base
+      <em>indexes</em> a dataset, an agent <em>retrieves from</em> that knowledge base. Every
+      relationship reads as a sentence in both directions.</li>
+      <li><strong>Governed change.</strong> Anyone can ask for a change; only the right people can make
+      one. A relationship touches two objects, so it needs a sign-off from a steward of each side, and
+      the request is refused up front if nobody could ever approve it.</li>
+      <li><strong>A complete history.</strong> Every write is captured structurally, by a listener that
+      sits inside the database session rather than by a call someone has to remember to make. The log
+      records who, when, which fields, from what to what, and <em>how</em> the change arrived — through
+      an approval, or by an administrator acting without one.</li>
+    </ul>
+
+    <h2 id="problem">The problem it solves</h2>
+
+    <p>Most organisations can answer "what tables do we have?" from a data catalog and "what models are
+    we running?" from a spreadsheet, and cannot join the two. The question that actually matters —
+    <em>which AI systems can reach regulated data, and under whose authority?</em> — falls in the gap.</p>
+
+    <p>DataGovern closes it by making the AI objects first-class catalog entries and giving them edges
+    into the data catalog. Because a knowledge base records the datasets it <em>indexes</em>, and a tool
+    records the tables it <em>reads from</em>, and an agent records the knowledge bases it
+    <em>retrieves from</em>, the answer is a graph walk rather than a week of log archaeology:</p>
+
+    <div class="flow">
+      <span class="box">Attribute (PII)</span><span class="arrow">←&nbsp;indexed into&nbsp;—</span>
+      <span class="box">Knowledge Base</span><span class="arrow">←&nbsp;retrieved by&nbsp;—</span>
+      <span class="box">AI Agent</span>
+    </div>
+    <div class="flow">
+      <span class="box">Dataset</span><span class="arrow">←&nbsp;read by&nbsp;—</span>
+      <span class="box">AI Tool</span><span class="arrow">←&nbsp;used by agent&nbsp;—</span>
+      <span class="box">AI Agent</span>
+    </div>
+    <div class="flow">
+      <span class="box">Dataset</span><span class="arrow">←&nbsp;trained on&nbsp;—</span>
+      <span class="box">AI Model</span><span class="arrow">←&nbsp;uses model&nbsp;—</span>
+      <span class="box">AI Agent</span>
+    </div>
+
+    <p>The same shape answers the questions either side of it: which policies govern an agent, which
+    metric measures its evaluation score, which project delivered it, which business term defines the
+    vocabulary its prompt depends on.</p>
+
+    <h2 id="catalogs">The two catalogs</h2>
+
+    <p>Seventeen object types, grouped into two catalogs plus one governance record. The grouping is
+    real — it drives the sidebar, the dashboard sections and the node shapes in the graph — but it is
+    only a grouping. Both halves use identical machinery.</p>
+
+    <h3 id="data-side">Data catalog <span class="pill data">8 types</span></h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Object</th><th>Ref</th><th>What it records</th><th>Parent</th></tr></thead>
+      <tbody>
+        <tr><td><strong>System</strong></td><td><code>SYS-001</code></td><td>An application, database, warehouse, lake, API, file store, cloud service — and, now, a vector database, AI platform or model gateway</td><td>Optional System</td></tr>
+        <tr><td><strong>Dataset</strong></td><td><code>DS-001</code></td><td>A table, view, file, API endpoint, report or stream inside a system</td><td><span class="pill req">System — required</span></td></tr>
+        <tr><td><strong>Attribute</strong></td><td><code>ATTR-001</code></td><td>A column or field inside a dataset, with its type, keys and classification</td><td><span class="pill req">Dataset — required</span></td></tr>
+        <tr><td><strong>Glossary term</strong></td><td><code>GL-001</code></td><td>An agreed business definition, its synonyms, abbreviation and usage guidance</td><td>Optional term (broader/narrower)</td></tr>
+        <tr><td><strong>Project</strong></td><td><code>PROJ-001</code></td><td>A governance or delivery initiative, with sponsor, dates, priority and status</td><td>Optional Project</td></tr>
+        <tr><td><strong>Process</strong></td><td><code>PROC-001</code></td><td>An ETL, quality, transformation, validation, reporting or ingestion job</td><td>Optional Process</td></tr>
+        <tr><td><strong>Policy</strong></td><td><code>POL-001</code></td><td>A rule the organisation has agreed, with enforcement level, regulation and review date</td><td>Optional Policy (Policy → Standard → Rule)</td></tr>
+        <tr><td><strong>Metric</strong></td><td><code>MET-001</code></td><td>One agreed definition of a measure — its formula, grain, target and thresholds</td><td>Optional Metric (composites)</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="ai-side">AI catalog <span class="pill ai">8 types</span></h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Object</th><th>Ref</th><th>What it records</th><th>Parent</th></tr></thead>
+      <tbody>
+        <tr><td><strong>AI Application</strong></td><td><code>APP-001</code></td><td>The deployable unit that contains agents — a repo, a service, a product. Where business accountability sits</td><td>Optional AI Application</td></tr>
+        <tr><td><strong>AI Agent</strong></td><td><code>AGT-001</code></td><td>The hub of the AI catalog: autonomy level, whose authority it acts under, its goal, memory and sponsor</td><td>Optional AI Application</td></tr>
+        <tr><td><strong>AI Model</strong></td><td><code>MDL-001</code></td><td>A set of weights — foundation, fine-tuned, adapter, distilled, quantized or embedding — with its model card</td><td>Optional model <em>group</em></td></tr>
+        <tr><td><strong>Model Endpoint</strong></td><td><code>EP-001</code></td><td>Where a model is actually served: region, residency, auth, rate limits, prompt retention</td><td><span class="pill req">AI Model — required</span></td></tr>
+        <tr><td><strong>Knowledge Base</strong></td><td><code>KB-001</code></td><td>A retrieval index and exactly how it was built: store, chunking, embedding dimension, PII flag</td><td>Optional Knowledge Base</td></tr>
+        <tr><td><strong>MCP Server</strong></td><td><code>MCP-001</code></td><td>A Model Context Protocol server, its transport and registry — and whether it is trusted</td><td>Optional MCP gateway</td></tr>
+        <tr><td><strong>AI Tool</strong></td><td><code>TOOL-001</code></td><td>What an agent binds to and where data access happens, with the MCP behaviour hints verbatim</td><td>Optional MCP Server</td></tr>
+        <tr><td><strong>Prompt Template</strong></td><td><code>PT-001</code></td><td>A versioned, reviewable prompt with a content hash, so "which prompt was live on date X?" is answerable</td><td>Optional Prompt Template</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="gov-side">Governance <span class="pill gov">1 type</span></h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Object</th><th>Ref</th><th>What it records</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Change Request</strong></td><td><code>CR-001</code></td><td>A request to create, update or delete something — with its target, its priority, its approvals and its outcome. A change request is a record <em>about</em> a catalog object, not a catalog object itself, so it takes no part in the relationship graph.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">People are catalog citizens too</div>
+      <p>Users are not an asset type — they have no reference number and no change requests — but they
+      have detail pages and they are searchable the same way a dataset is. You look up a steward exactly
+      as you look up a table.</p>
+    </div>
+
+    <h2 id="concepts">Core concepts</h2>
+
+    <p>Nine ideas carry the whole product. Everything else is an application of them.</p>
+
+    <h3 id="c-facet">Facet</h3>
+    <p>A <em>facet</em> is one object type, named by its plural route slug — <code>datasets</code>,
+    <code>ai-agents</code>, <code>prompt-templates</code>. The slug is the same word the URL uses, the
+    relationship tables store and the API accepts, so there is one vocabulary end to end. Internally a
+    single registry declares each facet once — its table, its model, its display names, its reference
+    prefix, its containment parent, its search weights — and everything else is derived from it. The
+    application refuses to start if that registry is inconsistent.</p>
+
+    <h3 id="c-ref">Reference number</h3>
+    <p>Every catalog object gets a short, unique, human-quotable identifier on creation:
+    <code>SYS-001</code>, <code>DS-047</code>, <code>AGT-003</code>, <code>MCP-012</code>. People quote
+    these in tickets and meetings, so search treats an exact reference match as almost unbeatable
+    evidence of what you meant, and accepts <code>ds-001</code>, <code>DS 001</code> and
+    <code>ds1</code> as the same thing.</p>
+
+    <h3 id="c-lifecycle">Lifecycle status vs domain status</h3>
+    <p>Every object carries a <strong>lifecycle status</strong> — <code>active</code>,
+    <code>inactive</code>, <code>obsolete</code> — which says whether the <em>catalog entry</em> is
+    current. Several types carry a second status of their own, which says where the <em>thing itself</em>
+    stands: a policy has a <code>policy_status</code> (draft → under review → approved → published →
+    retired), a project has a <code>project_status</code>, a process has an
+    <code>execution_status</code>, and every AI object has an <code>approval_status</code>. An agent can
+    be a perfectly active catalog entry that is still a draft awaiting sign-off.</p>
+
+    <h3 id="c-classification">Data classification</h3>
+    <p>One four-value scale — <code>public</code>, <code>internal</code>, <code>confidential</code>,
+    <code>restricted</code> — used identically on systems, datasets, attributes, policies, agents,
+    knowledge bases and tools. A model endpoint carries a second one,
+    <code>approved_data_classification</code>: the highest class of data allowed through that route,
+    which is what you compare against what the agents using it actually touch.</p>
+
+    <h3 id="c-steward">Steward</h3>
+    <p>A steward is an ordinary user who holds one or more <em>steward roles</em>. There is one steward
+    role per facet — sixteen in total — and a steward may create, edit and delete objects only in the
+    facets they hold, and may approve only change requests targeting those facets. Elsewhere they are a
+    read-only user. A person can hold several roles at once.</p>
+
+    <h3 id="c-relationship">Relationship (edge)</h3>
+    <p>A directed, typed link between two catalog objects, drawn from a catalogue of 141 allowed kinds.
+    Each kind declares which facet may sit at each end and what the link is called in each direction, so
+    <code>DS-002 is derived from DS-047</code> reads back as <code>DS-047 is source for DS-002</code>.
+    Symmetric kinds ("joins to", "same as") read identically both ways and are stored once.</p>
+
+    <h3 id="c-hierarchy">Hierarchy is not a relationship</h3>
+    <p>A dataset <em>belongs to</em> a system; an attribute belongs to a dataset; an endpoint belongs to
+    a model; a tool belongs to its MCP server. That is mandatory structure held as a foreign key, not an
+    optional edge. Hierarchy is shown alongside relationships on the Relationships tab, clearly marked
+    read-only, and is never raised as a change request — you change it by editing the object.</p>
+
+    <h3 id="c-cr">Change request</h3>
+    <p>The route to changing something you cannot change yourself. Any signed-in user can raise one
+    against any object. A steward of the target facet, or an administrator, decides. Requests that
+    create or remove a <em>relationship</em> are different: they touch two objects, so they collect one
+    approval per facet involved and are applied only when none is still pending.</p>
+
+    <h3 id="c-provenance">Provenance</h3>
+    <p>Every audit row records <em>how</em> the change arrived: <code>ui</code> for an ordinary edit,
+    <code>cr_apply</code> for the automatic apply step of an approved request, <code>admin_bypass</code>
+    for an administrator acting without one, <code>seed</code> for startup seeding. An administrator
+    shortcut is never indistinguishable from an approved change.</p>
+
+    <h2 id="lifecycle">The life of an object</h2>
+
+    <p>The same path, whichever of the seventeen types you are looking at.</p>
+
+    <ol class="steps">
+      <li><strong>Created</strong> — by an administrator or a steward of that facet, through the list
+      page's create button. A reference number is assigned, <code>created_by</code> and
+      <code>updated_by</code> are stamped, and an audit row is written.</li>
+      <li><strong>Enriched</strong> — fields are filled in over time by whoever holds the facet. Anyone
+      else who spots a gap raises a change request instead.</li>
+      <li><strong>Related</strong> — edges are added to other objects. An administrator's edge goes live
+      at once; anyone else's appears immediately on <em>both</em> objects as pending, and turns active
+      when every required side approves.</li>
+      <li><strong>Governed</strong> — policies are attached, metrics measure it, a risk tier and an
+      approval status are set on AI objects.</li>
+      <li><strong>Audited</strong> — every change above is on the object's Audit tab, with the
+      before/after of each field and how the change arrived.</li>
+      <li><strong>Retired</strong> — lifecycle status moves to <code>inactive</code> or
+      <code>obsolete</code>, or the object is deleted. Its audit rows survive it: a record of what
+      happened to something that no longer exists is the whole point of an audit log.</li>
+    </ol>
+
+    <h2 id="roles">Who does what</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Role</th><th>Can</th><th>Cannot</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Administrator</strong><br><span class="pill gov">account role <code>admin</code></span></td>
+          <td>Everything: create, edit and delete any object; manage people and assign steward roles;
+          review any change request; add and remove relationships directly.</td>
+          <td>Escape the audit trail — an administrator's direct action is recorded as
+          <code>admin_bypass</code> and is visibly distinct from an approved change.</td>
+        </tr>
+        <tr>
+          <td><strong>Steward</strong><br><span class="pill data">account role <code>normal</code> + steward roles</span></td>
+          <td>Create, edit and delete objects in their own facets; approve or reject change requests
+          targeting those facets; sign off their side of a relationship.</td>
+          <td>Touch a facet they do not hold — there they are a read-only user. Manage people.</td>
+        </tr>
+        <tr>
+          <td><strong>Normal user</strong><br><span class="pill muted">account role <code>normal</code></span></td>
+          <td>Read every object and every detail page; search and export; raise change requests on
+          anything; request relationships.</td>
+          <td>Write anything directly.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Permission is enforced by the API, not by the interface. The front end hides buttons the current
+    user cannot use, but every write endpoint re-checks the rule itself.</p>
+
+    <h2 id="architecture">How it is put together</h2>
+
+    <p>The same three technologies are arranged two different ways, depending on whether you are
+    developing or running a deployment. <strong>Development</strong> — three processes, so the code can
+    reload as you type:</p>
+
+    <div class="flow">
+      <span class="box">React + Vite&nbsp;:3000</span><span class="arrow">— /api proxy →</span>
+      <span class="box">FastAPI + uvicorn&nbsp;:8000</span><span class="arrow">— SQLAlchemy →</span>
+      <span class="box">PostgreSQL&nbsp;:5432</span>
+    </div>
+
+    <p><strong>Deployed</strong> — two processes. Vite becomes a build step rather than a server: the
+    compiled interface is served by the same uvicorn that answers the API, on one port and one origin,
+    against a PostgreSQL cluster that belongs to the installation:</p>
+
+    <div class="flow">
+      <span class="box">uvicorn&nbsp;:8080 &nbsp;(<code>/</code> = built UI, <code>/api</code> = API)</span><span class="arrow">— SQLAlchemy →</span>
+      <span class="box">PostgreSQL&nbsp;:55432</span>
+    </div>
+
+    <p>Nothing in <code>frontend/src</code> differs between them — it calls <code>/api/…</code>
+    relatively either way. The <a href="install.html#prod-architecture">deployed architecture</a> is
+    explained in full on the installation page, including
+    <a href="install.html#vite">what happens to Vite</a>.</p>
+
+    <dl class="kv">
+      <dt>Front end</dt><dd>React 19, TypeScript, Vite, Ant Design 6, React Router 7, axios. Cytoscape with a dagre layout for the relationship graph, lazily loaded so people who never open it never download it.</dd>
+      <dt>Back end</dt><dd>FastAPI, SQLAlchemy 2, Pydantic v2 / pydantic-settings, python-jose for JWT, bcrypt for password hashing, openpyxl for the Excel export. Python 3.12+.</dd>
+      <dt>Database</dt><dd>PostgreSQL with the <code>pg_trgm</code> extension, generated <code>tsvector</code> columns for full-text search, GIN indexes for both full text and trigram, and a per-table index on <code>upper(reference_number)</code>.</dd>
+      <dt>Authentication</dt><dd>JWT bearer tokens, HS256, valid for 480 minutes (8 hours). Passwords are stored as bcrypt hashes and are never readable by anyone, administrators included.</dd>
+      <dt>Schema management</dt><dd>Created and reconciled at startup. There is no migration tool yet: <code>create_all</code>, a schema-cleanup pass, and idempotent seeding of steward roles, the admin user and the relationship catalogue.</dd>
+    </dl>
+
+    <h3 id="startup">What happens when the backend starts</h3>
+
+    <ol class="steps">
+      <li><strong>The facet registry is validated</strong> — duplicate slugs, a slug too long for its
+      column, a containment parent that is not a facet, a search weight naming a column that does not
+      exist, an enum column placed where only text can go. Any of these and the application refuses to
+      boot, loudly, instead of failing silently later.</li>
+      <li><strong>Tables are created</strong> if they are not there, then a cleanup pass reconciles
+      leftovers from earlier schema shapes.</li>
+      <li><strong>Search is set up</strong> — the generated <code>search_vector</code> column on each
+      table is fingerprinted against its intended definition and rebuilt if the definition changed, then
+      the indexes are ensured.</li>
+      <li><strong>Steward roles are seeded</strong>, one per facet, per facet rather than
+      all-or-nothing, so a facet added later still gets its role.</li>
+      <li><strong>The default administrator is seeded</strong> if no account with that email exists.</li>
+      <li><strong>The relationship catalogue is seeded</strong> — additively, so a type you have
+      relabelled keeps your wording across restarts.</li>
+      <li><strong>The audit listener is installed</strong> on the SQLAlchemy session.</li>
+    </ol>
+
+    <h2 id="running">Running and deploying it</h2>
+
+    <p>Two ways, and they are deliberately separate stacks rather than one with a switch. Which
+    configuration file exists decides which you are in: <code>.env</code> means a deployment,
+    <code>.env.development</code> means development, and <strong>never both</strong> — so a production
+    machine cannot silently inherit a development default.</p>
+
+    <h3 id="run-dev">Development — three processes</h3>
+
+<pre><code>services/all.sh start      # postgres → backend → frontend
+services/all.sh status     # up/down, pid, port, health check for each
+services/all.sh logs       # tail the backend and frontend logs
+services/all.sh stop       # frontend → backend → postgres
+</code></pre>
+
+    <p>Individual services take the same five verbs:
+    <code>services/backend.sh {start|stop|restart|status|logs}</code>. <code>start</code> is idempotent,
+    and each script finds its service by port as well as by pidfile, so it can stop a server you
+    launched by hand in another terminal. Ports come from <code>PG_PORT</code>,
+    <code>BACKEND_PORT</code> and <code>FRONTEND_PORT</code> if set, otherwise 5432 / 8000 / 3000.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>What</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>Application</td><td><code>http://localhost:3000</code></td></tr>
+        <tr><td>Interactive API docs (Swagger)</td><td><code>http://localhost:8000/docs</code></td></tr>
+        <tr><td>Health check</td><td><code>http://localhost:8000/api/health</code></td></tr>
+        <tr><td>Default sign-in</td><td><code>admin@datagovern.com</code> / <code>admin123</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="run-deployed">A deployment — one command, then two processes</h3>
+
+<pre><code>./install.sh               # ask a few questions, then do everything
+./dgp status               # is it running, and is it healthy
+./dgp start | stop | restart | logs
+./dgp backup               # pg_dump into var/backups
+./dgp help                 # everything else
+</code></pre>
+
+    <p>The installer creates its own PostgreSQL cluster inside the installation directory, builds the
+    interface, creates the schema, seeds the catalogue, and verifies the result by signing in as the
+    administrator it just created. Everything it owns is inside that one directory, so deleting the
+    directory removes the installation.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>What</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>Application — interface and API together</td><td><code>http://127.0.0.1:8080</code></td></tr>
+        <tr><td>Liveness / readiness</td><td><code>/api/health</code> · <code>/api/health/ready</code></td></tr>
+        <tr><td>PostgreSQL (this install's own cluster)</td><td><code>127.0.0.1:55432</code></td></tr>
+        <tr><td>Sign-in</td><td>Set at install time, recorded in <code>.env</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Neither set of ports overlaps the other, so a development stack and a deployment can run side by
+    side on the same machine.</p>
+
+    <div class="note danger">
+      <div class="note-title">Change the seeded administrator before anyone else uses this</div>
+      <p>The <code>admin@datagovern.com</code> / <code>admin123</code> account is a <em>development</em>
+      default that exists so a fresh database is usable, and its credentials are in the source. A
+      deployment never uses it — the installer asks you for a password or generates one. On any shared
+      development instance, create a real administrator, sign in as them, and deactivate the seeded one.
+      The same goes for the signing key: the committed development key is refused in production by
+      digest.</p>
+    </div>
+
+    <div class="note ok">
+      <div class="note-title">The full installation and operations guide</div>
+      <p><a href="install.html">Install &amp; operate</a> covers all of it: prerequisites, the
+      installer's flags and steps, what lands on disk, every configuration setting, and the
+      administrator's reference —
+      <a href="install.html#checking-prod">how to check the PostgreSQL, backend and front-end services</a>,
+      <a href="install.html#logs">where every log is</a>,
+      <a href="install.html#backup">backup and restore</a>,
+      <a href="install.html#https">HTTPS</a>,
+      <a href="install.html#autostart">starting at login</a> and
+      <a href="install.html#install-faq">troubleshooting</a>.</p>
+    </div>
+
+    <h2 id="map">Documentation map</h2>
+
+    <p>These pages are the end-user documentation. The repository root carries the rest.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Document</th><th>Written for</th><th>What is in it</th></tr></thead>
+      <tbody>
+        <tr><td><strong>docs/index.html</strong> <span class="pill ok">you are here</span></td><td>Everyone</td><td>What the product is, the concepts, how the pieces fit, where to go next</td></tr>
+        <tr><td><strong><a href="install.html">docs/install.html</a></strong></td><td>Whoever installs and runs it</td><td>Prerequisites, the installer, the deployed architecture, configuration, and the administrator's reference — checking each service, logs, health, backups, HTTPS, autostart, troubleshooting</td></tr>
+        <tr><td><strong><a href="features.html">docs/features.html</a></strong></td><td>Evaluators, stewards, governance leads</td><td>Every capability in detail — every object type field by field, every enum, every relationship type, search scoring, approvals, audit, API surface</td></tr>
+        <tr><td><strong><a href="usage.html">docs/usage.html</a></strong></td><td>Anyone using the product</td><td>Task-by-task guide — setup, cataloguing, relating, searching, exporting, reviewing, auditing, per-role routines, troubleshooting</td></tr>
+        <tr><td><a href="../README.md">README.md</a></td><td>Users and evaluators</td><td>Install, run, and a narrative tour of the platform</td></tr>
+        <tr><td><a href="../DEVELOPER.md">DEVELOPER.md</a></td><td>Contributors</td><td>Architecture, every file's responsibility, schema, full API reference, how to add a facet</td></tr>
+        <tr><td><a href="../TECHNICAL_GUIDE.md">TECHNICAL_GUIDE.md</a></td><td>Anyone new to web development</td><td>Every concept used here explained from zero, plus end-to-end traces of what happens on a click</td></tr>
+        <tr>
+            <td><a href="../AI_cataloging_idea.md"><code>AI_cataloging_idea.md</code></a></td>
+            <td>Anyone asking "why these facets?"</td>
+            <td>The metamodel survey the AI catalog was designed from — OpenMetadata&nbsp;2.0 and Collibra — and the standards it aligns with</td>
+          </tr>
+          <tr><td><a href="../ai-catalog-design.md">ai-catalog-design.md</a></td><td>Designers of the AI metamodel</td><td>Which facets, which fields, which edges, and why</td></tr>
+        <tr><td><a href="../ai-catalog-implementation-plan.md">ai-catalog-implementation-plan.md</a></td><td>Implementers</td><td>What was built, what deliberately was not, what each increment costs</td></tr>
+        <tr><td><a href="../ai-scanner-design.md">ai-scanner-design.md</a></td><td>Phase 2</td><td>How a folder of code becomes catalog metadata — identity, extraction, reconciliation, limits</td></tr>
+        <tr><td><a href="../CLAUDE.md">CLAUDE.md</a></td><td>The project itself</td><td>Running development log: decisions, bugs, what is next</td></tr>
+          <tr>
+            <td><a href="../services/README.md"><code>services/README.md</code></a></td>
+            <td>Anyone running it</td>
+            <td>The <strong>development</strong> start/stop/restart scripts: what each one does, the ports and overrides, and why <code>brew services</code> is deliberately not used</td>
+          </tr>
+          <tr>
+            <td><code>install.sh</code> · <code>dgp</code> · <code>build.sh</code></td>
+            <td>Whoever deploys it</td>
+            <td>The installer, the operator command and the release build. All three take <code>--help</code>; <a href="install.html">install.html</a> is the prose version</td>
+          </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="glossary">Glossary</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Term</th><th>Meaning here</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A2A</strong></td><td>Agent-to-Agent protocol. An agent may record its A2A card URL and its declared skills.</td></tr>
+        <tr><td><strong>Autonomy level</strong></td><td>How much an agent may do without a human in the path: suggest only, human in the loop, supervised, autonomous. The single most governance-relevant field on the facet.</td></tr>
+        <tr><td><strong>Acts on behalf of</strong></td><td>Whose authority an agent's tool calls carry — the invoking end user, a standing service account, or both. Decides the blast radius of a mistake.</td></tr>
+        <tr><td><strong>Containment</strong></td><td>The mandatory parent held as a foreign key (dataset → system, endpoint → model). Distinct from a relationship.</td></tr>
+        <tr><td><strong>Content hash</strong></td><td>SHA-256 of a prompt template's text. Recorded before and after every edit, so the audit trail alone answers "which prompt was live on date X?".</td></tr>
+        <tr><td><strong>Edge</strong></td><td>One stored relationship between two objects.</td></tr>
+        <tr><td><strong>Facet</strong></td><td>One object type, named by its plural route slug.</td></tr>
+        <tr><td><strong>MCP</strong></td><td>Model Context Protocol. An MCP server publishes tools an agent can call; the catalog tracks both, and whether the server is trusted.</td></tr>
+        <tr><td><strong>Model group</strong></td><td>A parent AI Model under which every build of one model is filed. Distinct from the <em>base</em> model a fine-tune derives from, which is an edge.</td></tr>
+        <tr><td><strong>Resolved version</strong></td><td>The pinned build a runtime actually reports (<code>gpt-4o-2024-08-06</code>), as opposed to the alias written in code (<code>gpt-4o</code>). Keeping both is what makes "which model was live?" answerable.</td></tr>
+        <tr><td><strong>Risk tier</strong></td><td>EU AI Act classification: unacceptable, high, limited, minimal, or unassessed. The anchor for every other governance decision about an AI object.</td></tr>
+        <tr><td><strong>Trust status</strong></td><td>The governance decision on an MCP server: approved, under review, quarantined, blocked, unknown. Everything else on that facet is description; this is the control.</td></tr>
+        <tr><td><strong>Via</strong></td><td>How a change reached the database — <code>ui</code>, <code>cr_apply</code>, <code>admin_bypass</code> or <code>seed</code>.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="pagenav">
+      <a href="install.html"><span class="kicker">Next</span><strong>Install &amp; operate →</strong>
+      Install it, then check, log, back up and administer it.</a>
+      <a href="features.html"><span class="kicker">Or jump to</span><strong>Feature reference →</strong>
+      Every object type, field, enum and relationship, in detail.</a>
+    </div>
+
+    <div class="footer">
+      <span>DataGovern — open-source data &amp; AI governance.</span>
+      <span>Documentation for the Phase&nbsp;1 catalog.</span>
+    </div>
+
+  </main>
+
+  <nav class="toc" aria-label="On this page"></nav>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

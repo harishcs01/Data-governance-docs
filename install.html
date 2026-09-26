@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install &amp; operate — DataGovern Documentation</title>
+<meta name="description" content="Installing DataGovern, the deployed architecture, and the administrator's reference: checking the PostgreSQL, backend and frontend services, reading logs, health checks, backups, HTTPS and autostart.">
+<link rel="stylesheet" href="assets/docs.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <button class="icon-btn menu-btn" data-menu-toggle aria-expanded="false" aria-label="Open navigation">☰</button>
+  <a class="brand" href="index.html"><span class="mark">DG</span> DataGovern <small>Documentation</small></a>
+  <nav class="topnav">
+    <a href="index.html">Overview</a>
+    <a href="install.html" aria-current="page">Install &amp; operate</a>
+    <a href="features.html">Features</a>
+    <a href="usage.html">Using the product</a>
+    <a href="../README.md">README</a>
+    <button class="icon-btn" data-theme-toggle type="button">☾</button>
+  </nav>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <h4>Before you start</h4>
+    <a href="#two-stacks">Two ways to run it</a>
+    <a href="#prod-architecture">The deployed architecture</a>
+    <a href="#vite">Where Vite went</a>
+    <a href="#one-process">One process, two jobs</a>
+    <a href="#one-request">One request, traced</a>
+    <a href="#prereqs">Prerequisites</a>
+
+    <h4>Installing</h4>
+    <a href="#install">Running the installer</a>
+    <a href="#install-flags">Flags and unattended installs</a>
+    <a href="#install-steps">What the installer does</a>
+    <a href="#layout">What it puts on disk</a>
+    <a href="#config">Configuration</a>
+    <a href="#reinstall">Re-running and upgrading</a>
+
+    <h4>Operating</h4>
+    <a href="#dgp">The <code>dgp</code> command</a>
+    <a href="#checking-prod">Checking the services</a>
+    <a href="#checking-dev">Checking the dev stack</a>
+    <a href="#logs">Where every log is</a>
+    <a href="#health">Health endpoints</a>
+    <a href="#ports">Ports and what holds them</a>
+
+    <h4>Administration</h4>
+    <a href="#admin-daily">Daily and weekly</a>
+    <a href="#passwords">Passwords and accounts</a>
+    <a href="#backup">Backup and restore</a>
+    <a href="#database">Working in the database</a>
+    <a href="#https">HTTPS</a>
+    <a href="#autostart">Starting at login</a>
+
+    <h4>Beyond</h4>
+    <a href="#release">Cutting a release</a>
+    <a href="#uninstall">Uninstalling</a>
+    <a href="#install-faq">Installation troubleshooting</a>
+
+    <h4>Elsewhere</h4>
+    <a href="index.html">Overview</a>
+    <a href="features.html">Feature reference</a>
+    <a href="usage.html">Using the product</a>
+  </aside>
+
+  <main class="content">
+
+    <h1>Install and operate DataGovern</h1>
+    <p class="lede">Everything between an empty checkout and a running, backed-up, healthy
+    installation — and then the administrator's reference for the questions you actually ask day to
+    day: <em>is it up, where is the log, which process holds that port, how do I check PostgreSQL.</em></p>
+
+    <p>Two things are worth knowing before anything else. First, <strong>there are two ways to run this
+    project and they are deliberately different stacks</strong>, not one with a switch. Second, a
+    deployment is <strong>entirely contained in its own directory</strong> — its PostgreSQL cluster, its
+    logs, its backups, its configuration. Deleting the directory removes the installation.</p>
+
+    <h2 id="two-stacks">Two ways to run it</h2>
+
+    <p>Development runs three processes so the code can reload as you type. A deployment runs two,
+    because nothing needs to reload and one fewer moving part is one fewer thing to go wrong.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Development</th><th>Deployed</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Started with</strong></td><td><code>services/all.sh start</code></td><td><code>./dgp start</code></td></tr>
+        <tr><td><strong>Front end</strong></td><td>Vite dev server, port <strong>3000</strong>, hot module reload, proxies <code>/api</code> to the backend</td><td><strong>No front-end process.</strong> Vite is a build step only; the compiled files in <code>frontend/dist</code> are served by the backend</td></tr>
+        <tr><td><strong>Back end</strong></td><td>uvicorn, one worker, port <strong>8000</strong>, optional <code>--reload</code></td><td>uvicorn, <strong>several workers</strong>, port <strong>8080</strong> (or 8443 with TLS), serving the API <em>and</em> the interface</td></tr>
+        <tr><td><strong>Database</strong></td><td>The machine's shared PostgreSQL — Homebrew's cluster on <strong>5432</strong></td><td>Its <strong>own</strong> cluster inside <code>var/postgres/data</code> on <strong>55432</strong>, loopback only</td></tr>
+        <tr><td><strong>Configuration</strong></td><td><code>.env.development</code>, committed to the repository</td><td><code>.env</code>, written by the installer, mode <code>600</code></td></tr>
+        <tr><td><strong>Scripts</strong></td><td><code>services/{postgres,backend,frontend,all}.sh</code></td><td><code>deploy/{postgres,app,cert,all}.sh</code>, driven by <code>./dgp</code></td></tr>
+        <tr><td><strong>Interactive API docs</strong></td><td>Always on, at <code>:8000/docs</code></td><td><code>DGP_DOCS_ENABLED</code>, default on, at <code>:8080/docs</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note ok">
+      <div class="note-title">Both can run at once, on the same machine</div>
+      <p>No port overlaps: 3000 / 8000 / 5432 against 8080 / 55432. That is not a coincidence — it is
+      what lets the release build install and test a real copy of itself while you keep working in the
+      development stack.</p>
+    </div>
+
+    <div class="note warn">
+      <div class="note-title">The two script directories share filenames on purpose</div>
+      <p><code>services/postgres.sh</code> and <code>deploy/postgres.sh</code> are different programs.
+      The first drives the machine's Homebrew cluster on 5432; the second creates and drives a cluster
+      inside <code>var/</code> on 55432. Same five verbs, different database. Check which directory you
+      are typing before you wonder why <code>status</code> says DOWN.</p>
+    </div>
+
+    <h2 id="prod-architecture">The deployed architecture</h2>
+
+    <p>Development, for comparison — three processes, two hops:</p>
+
+    <div class="flow">
+      <span class="box">Browser</span><span class="arrow">→</span>
+      <span class="box">Vite dev server&nbsp;:3000</span><span class="arrow">— /api proxy →</span>
+      <span class="box">uvicorn&nbsp;:8000</span><span class="arrow">— SQLAlchemy →</span>
+      <span class="box">PostgreSQL&nbsp;:5432</span>
+    </div>
+
+    <p>Deployed — two processes, one hop:</p>
+
+    <div class="flow">
+      <span class="box">Browser</span><span class="arrow">→</span>
+      <span class="box">uvicorn&nbsp;:8080 &nbsp;(<code>/</code> = built UI, <code>/api</code> = API)</span><span class="arrow">— SQLAlchemy →</span>
+      <span class="box">PostgreSQL&nbsp;:55432 (own cluster)</span>
+    </div>
+
+    <p>The technologies are identical — React, FastAPI, PostgreSQL. What changes is how they are
+    served.</p>
+
+    <h3 id="vite">Vite is two different programs that share one name</h3>
+
+    <p>This is where the confusion usually is. "Vite" names both a <em>development server</em> and a
+    <em>build tool</em>, and a deployment uses only the second one.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th><code>vite</code> — the dev server</th><th><code>vite build</code> — the bundler</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Lifetime</strong></td><td>A long-running Node process on port 3000</td><td>Runs once and <strong>exits</strong></td></tr>
+        <tr><td><strong>What it does</strong></td><td>Transforms one <code>.tsx</code> file at a time, on demand, as the browser asks for it. Keeps a WebSocket open so saving a file hot-swaps that module</td><td>Follows every import from <code>index.html</code>, type-checks, tree-shakes, minifies, and writes finished static files to <code>frontend/dist</code></td></tr>
+        <tr><td><strong>Also</strong></td><td>Acts as a reverse proxy: <code>/api/*</code> → <code>localhost:8000</code></td><td>Content-hashes every asset name, so a new build has new filenames</td></tr>
+        <tr><td><strong>Used in a deployment</strong></td><td><strong>No</strong></td><td><strong>Yes</strong> — once, at install time</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>So after <code>npm run build</code>, <strong>Node is not needed at runtime at all</strong>. There
+    is no Node process anywhere in a deployed installation. What is left is a handful of ordinary
+    files:</p>
+
+<pre><code>frontend/dist/index.html                             384 B    the page shell
+frontend/dist/assets/index-D2VyfNzE.js               1.4 MB   the application
+frontend/dist/assets/RelationshipGraph-BUCaXoK2.js   490 KB   the lazily-loaded graph
+frontend/dist/favicon.svg, icons.svg
+</code></pre>
+
+    <p>The dev server had two jobs. Only one of them needs replacing.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>The dev server's job</th><th>What happens in a deployment</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Serving the HTML and JavaScript</strong></td><td><strong>Taken over by uvicorn</strong>, through the static mount in <code>backend/app/web.py</code>. It reads bytes off disk and sends them — no compiling, because <code>dist</code> is already finished JavaScript. The dev server was compiling on every request only because the source is TypeScript.</td></tr>
+        <tr><td><strong>Proxying <code>/api</code> to the backend</strong></td><td><strong>Nothing replaces it — the need disappears.</strong> In development the page is on <code>:3000</code> and the API on <code>:8000</code>, two different origins, and the proxy exists so the browser does not treat the call as cross-origin. In a deployment both are <code>:8080</code>. A relative <code>fetch('/api/…')</code> from a page loaded off 8080 already goes to 8080. There is nothing to forward.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note ok">
+      <div class="note-title">The front-end source code is identical in both cases</div>
+      <p>It calls <code>/api/…</code> relatively either way. Nothing in <code>frontend/src</code> knows
+      or cares which stack is serving it — only what is in front of it changes. That is why the
+      production work added no front-end code at all.</p>
+    </div>
+
+    <h3 id="one-process">One process serves the interface and the API</h3>
+
+    <p>In development the browser talks to Vite, which forwards <code>/api</code> calls to uvicorn.
+    In a deployment there is no Vite: <code>npm run build</code> compiles the application into static
+    HTML, JavaScript and CSS under <code>frontend/dist</code>, and the same uvicorn process that answers
+    <code>/api</code> also serves those files at <code>/</code>. One port, one origin.</p>
+
+    <p>Three consequences, each of which removes a class of problem:</p>
+
+    <ul>
+      <li><strong>No CORS.</strong> The page and the API come from the same origin, so there is no
+      cross-origin configuration to get wrong, and <code>DGP_CORS_ORIGINS</code> is empty in a normal
+      install.</li>
+      <li><strong>No proxy to keep in step.</strong> There is no second server whose route table has to
+      agree with the backend's.</li>
+      <li><strong>TLS is terminated exactly once.</strong> Turning HTTPS on is one setting on one
+      listener, not a certificate in two places.</li>
+    </ul>
+
+    <p>Serving a single-page application from a static mount takes two deliberate behaviours, both in
+    <code>backend/app/web.py</code>:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Behaviour</th><th>Why it is needed</th></tr></thead>
+      <tbody>
+        <tr><td>A 404 outside <code>/api</code> falls back to <code>index.html</code></td><td><code>/assets/systems/12</code> and <code>/search?q=x</code> are routes in the React router, not files on disk. Without the fallback, a refresh or a shared link breaks.</td></tr>
+        <tr><td>A 404 <em>inside</em> <code>/api</code> stays a 404</td><td>If every miss became a web page, a mistyped endpoint would answer <code>200</code> with HTML and the client — expecting JSON — would report something incomprehensible.</td></tr>
+        <tr><td><code>index.html</code> is sent <code>no-store</code></td><td>It is the one file whose name never changes. Cached, a browser keeps loading the old page, which points at asset filenames the new build no longer has.</td></tr>
+        <tr><td><code>/assets/*</code> is cached for a year, <code>immutable</code></td><td>Vite content-hashes every built asset (<code>index-B3kd9x.js</code>), so a new build invalidates them by changing the name.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>If the interface was never built, the application does not pretend otherwise: <code>/</code>
+    answers <code>503</code> with the command that fixes it, while the API keeps working.</p>
+
+    <h3 id="one-request">The same request, traced both ways</h3>
+
+    <p>A browser opens <code>/assets/systems/12</code> — a route in the React router, not a file on
+    disk:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Step</th><th>Development</th><th>Deployed</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>1 · Load the page</strong></td>
+          <td>Vite on 3000 has no such file, so it serves <code>index.html</code> and then compiles <code>main.tsx</code> and each import as the browser requests them</td>
+          <td>uvicorn on 8080 looks for <code>assets/systems/12</code> on disk, does not find it, <strong>falls back to <code>index.html</code></strong>, then serves the prebuilt <code>index-D2VyfNzE.js</code> as-is</td>
+        </tr>
+        <tr>
+          <td><strong>2 · Render</strong></td>
+          <td colspan="2">React Router reads the URL and renders the asset detail page. Identical in both.</td>
+        </tr>
+        <tr>
+          <td><strong>3 · Fetch the data</strong><br><code>/api/assets/systems/12/detail</code></td>
+          <td>→ Vite :3000 → <strong>proxy</strong> → uvicorn :8000 → SQLAlchemy → PostgreSQL :5432</td>
+          <td>→ uvicorn :8080 → SQLAlchemy → PostgreSQL :55432</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>One ordering constraint follows from this: a mount at <code>/</code> matches every path, so it is
+    registered <strong>after</strong> every API router. Anything added after the mount would be
+    unreachable.</p>
+
+    <h3 id="prod-runtime">What else differs in the deployed backend</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Aspect</th><th>Deployed behaviour</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Workers</strong></td><td>Several worker processes, so one slow request does not block the rest. The installer picks the count from the machine's CPUs — <strong>1</strong> on two cores or fewer, <strong>2</strong> normally, <strong>4</strong> on eight or more — and writes it as <code>DGP_WORKERS</code>; the scripts fall back to 2 if it is unset. Never combined with <code>--reload</code>: uvicorn's reloader <em>is</em> the supervisor, and the two are mutually exclusive.</td></tr>
+        <tr><td><strong>Schema bootstrap</strong></td><td>Runs at startup under a PostgreSQL <em>advisory lock</em> (<code>services/bootstrap.py</code>). Without it, two workers starting together would race on <code>CREATE TABLE</code>.</td></tr>
+        <tr><td><strong>Connection pool</strong></td><td>Pooled engine with <code>pool_pre_ping</code> (one round-trip per checkout, and a connection the database has since dropped never reaches a request), a recycle window so connections are closed before an idle timeout elsewhere closes them first, and a per-connection <code>statement_timeout</code> of <strong>60 seconds</strong> — no single query can run forever.</td></tr>
+        <tr><td><strong>Health</strong></td><td>Split in two: <code>/api/health</code> is liveness, <code>/api/health/ready</code> touches the database. See <a href="#health">health endpoints</a>.</td></tr>
+        <tr><td><strong>Every response carries</strong></td><td><code>X-Request-ID</code> and a set of security headers. The request id is the hook Phase 2's detailed logging is built on.</td></tr>
+        <tr><td><strong>Shutdown</strong></td><td><code>--timeout-graceful-shutdown 20</code>, so a restart lets in-flight requests finish instead of failing them.</td></tr>
+        <tr><td><strong>Proxy headers</strong></td><td><code>--proxy-headers</code>, trusting <code>X-Forwarded-*</code> only from <code>DGP_FORWARDED_ALLOW_IPS</code> (default <code>127.0.0.1</code>) — relevant only if you put nginx or a load balancer in front.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="prod-postgres">And in the database</h3>
+
+    <p>A deployment does not use the machine's PostgreSQL. It creates its own cluster, inside the
+    installation directory:</p>
+
+<pre><code>var/postgres/data      the cluster itself
+var/postgres/socket    its unix socket, so it cannot clash with another server
+var/log/postgres.log   its server log
+</code></pre>
+
+    <p>It listens on <code>127.0.0.1</code> only, on port 55432. An existing PostgreSQL on 5432 is
+    neither used nor disturbed, and there is no shared cluster whose upgrade breaks this application.
+    The <em>binaries</em> still come from the machine — Homebrew, Postgres.app or a distribution
+    package — and a cluster is bound to its major version, which is why the installer refuses to
+    continue if it finds a version 17 cluster and version 18 binaries.</p>
+
+    <p>Like the development stack, it is driven with <code>pg_ctl</code> rather than
+    <code>brew services</code>, so that a stop stays stopped.</p>
+
+    <div class="note">
+      <div class="note-title">Which configuration file is read is not a flag</div>
+      <p><code>config.py</code> reads <code>.env</code> if it exists and <code>.env.development</code>
+      otherwise — <strong>never both</strong>. A chain with one overriding the other reads better and is
+      a trap: a setting the installer happened not to write would be answered by a <em>development</em>
+      default, on a production machine, silently. Two mutually exclusive files cannot do that. The
+      committed development signing key is additionally refused in production by SHA-256 digest, so a
+      published key cannot sign real sessions even if someone copies the file.</p>
+    </div>
+
+    <h2 id="prereqs">Prerequisites</h2>
+
+    <p>The installer checks all of these and stops with the exact command to fix anything missing. On
+    macOS it will offer to run <code>brew install</code> for you; on Linux it prints the right command
+    for your package manager.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Needed</th><th>Version</th><th>What for</th></tr></thead>
+      <tbody>
+        <tr><td><strong>macOS or Linux</strong></td><td>—</td><td>Only these two. The installer refuses anything else rather than half-working.</td></tr>
+        <tr><td><strong>PostgreSQL</strong></td><td>17 recommended</td><td>The binaries. The cluster is created by the installer. Point <code>DGP_PG_BINDIR</code> at them if they are somewhere unusual.</td></tr>
+        <tr><td><strong>uv</strong></td><td>current</td><td>The Python package manager. It brings its own Python 3.12+; you do not install Python separately.</td></tr>
+        <tr><td><strong>Node.js and npm</strong></td><td><strong>20 or newer</strong></td><td>Building the interface. Vite 8 will not build on 18. Not needed at all with <code>--skip-build</code> and an existing build.</td></tr>
+        <tr><td><strong>openssl</strong></td><td>any</td><td>Generating the signing key, the database password, and the TLS certificate.</td></tr>
+        <tr><td><strong>curl</strong></td><td>any</td><td>The readiness checks the installer and <code>dgp</code> use.</td></tr>
+        <tr><td><strong>Disk</strong></td><td>1 GB free</td><td>Warned about, not enforced. A fresh install is a few hundred MB.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note danger">
+      <div class="note-title">Do not run the installer as root</div>
+      <p>It refuses. PostgreSQL will not start as root, and an install owned by the wrong user is a
+      permissions problem you then have to unpick. Run it as the user who will operate the platform.</p>
+    </div>
+
+    <h2 id="install">Running the installer</h2>
+
+    <p>From the directory holding <code>install.sh</code>:</p>
+
+<pre><code>./install.sh
+</code></pre>
+
+    <p>It asks a short set of questions, shows you the plan, waits for confirmation, and then does
+    everything: dependencies, the interface build, the PostgreSQL cluster, the database, the schema, the
+    seed data, the first administrator, and a start-and-verify pass. Expect a few minutes, most of it
+    <code>npm ci</code>.</p>
+
+    <p>The interview has two paths:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Choice</th><th>What you get</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1 · Default</strong></td><td>Application on <code>127.0.0.1:8080</code>, PostgreSQL on <code>55432</code>, HTTP, docs enabled. You are still asked for the administrator password.</td></tr>
+        <tr><td><strong>2 · Custom</strong></td><td>You choose the HTTP port, the database port, the bind address, whether to enable HTTPS, whether to expose <code>/docs</code>, and the worker count.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Every port you type is validated as you type it — a non-number, anything below 1024 (which would
+    need root), anything above 65535, or a port already held by another process is rejected with the
+    offending pid named, and it asks again. If the ports are held by <em>a previous install of this
+    platform</em>, it recognises that and offers to stop it and continue.</p>
+
+    <p>The administrator password may be one you choose or one it generates. A generated password is
+    printed once, in the summary, and also written to <code>.env</code> — save it at that point.</p>
+
+    <div class="note warn">
+      <div class="note-title">A single quote cannot appear in the email or password</div>
+      <p><code>.env</code> is read by two different parsers — bash and python-dotenv — and single
+      quotes taken literally are the only style both agree on. A value containing <code>'</code> is
+      refused at the point of entry rather than producing a file that half-parses.</p>
+    </div>
+
+    <h3 id="install-verify">The install verifies itself</h3>
+
+    <p>The last step does not just check that the port answers. It <strong>signs in as the
+    administrator over HTTP</strong> and confirms a token comes back, then fetches <code>/</code> to
+    confirm the interface is actually being served. For that login to succeed, the signing key, the
+    database role and password, the schema, the seeded administrator and the password hash must all be
+    right — so one check covers the whole chain.</p>
+
+    <h2 id="install-flags">Flags and unattended installs</h2>
+
+<pre><code>./install.sh --default                         # default ports, ask only for the password
+./install.sh --default --admin-password 'secret1234'   # fully unattended
+./install.sh --http-port 9000 --db-port 55500  # choose ports without the interview
+./install.sh --https                           # generate a certificate and serve TLS
+./install.sh --skip-build                      # reuse frontend/dist, do not rebuild
+./install.sh --help                            # the full list
+</code></pre>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Flag</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>--default</code></td><td>Skip the interview, take the default ports.</td></tr>
+        <tr><td><code>--yes</code>, <code>-y</code></td><td>Answer every confirmation with its default.</td></tr>
+        <tr><td><code>--http-port N</code></td><td>Application port. Default 8080.</td></tr>
+        <tr><td><code>--https-port N</code></td><td>Port used when HTTPS is on. Default 8443.</td></tr>
+        <tr><td><code>--db-port N</code></td><td>This installation's PostgreSQL port. Default 55432.</td></tr>
+        <tr><td><code>--host ADDR</code></td><td>Bind address. Default <code>127.0.0.1</code>; <code>0.0.0.0</code> to allow other machines.</td></tr>
+        <tr><td><code>--workers N</code></td><td>uvicorn worker processes. Default: from the CPU count — 1, 2 or 4.</td></tr>
+        <tr><td><code>--https</code> / <code>--no-https</code></td><td>Serve TLS with a generated self-signed certificate.</td></tr>
+        <tr><td><code>--docs</code> / <code>--no-docs</code></td><td>Expose <code>/docs</code>, <code>/redoc</code> and <code>/openapi.json</code>.</td></tr>
+        <tr><td><code>--admin-email ADDR</code></td><td>The first administrator's email. Default <code>admin@datagovern.com</code>.</td></tr>
+        <tr><td><code>--admin-password PASS</code></td><td>Their password. Prompted, or generated, if not given.</td></tr>
+        <tr><td><code>--skip-build</code></td><td>Do not rebuild the interface. Builds anyway if there is nothing to reuse.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note danger">
+      <div class="note-title">Binding to 0.0.0.0 exposes the platform to your network</div>
+      <p>The default is loopback for a reason. If you open it up, turn HTTPS on as well — otherwise
+      passwords and session tokens cross the network in clear text — and narrow
+      <code>DGP_TRUSTED_HOSTS</code> from <code>*</code> to the hostnames the platform is reached by.</p>
+    </div>
+
+    <h2 id="install-steps">What the installer does, step by step</h2>
+
+    <ol class="steps">
+      <li><strong>Checking prerequisites</strong> — platform, not-root, openssl, curl, uv, Node 20+,
+      the PostgreSQL binaries, the major version of any existing cluster, free disk. It offers to
+      install what it can.</li>
+      <li><strong>Writing configuration</strong> — generates the signing key and the database password
+      with <code>openssl</code>, writes <code>.env</code> at mode <code>600</code>. An existing
+      <code>.env</code> is only rewritten with permission, and a copy is kept as
+      <code>.env.backup</code>. On a rewrite the <em>existing database password is kept</em>, because
+      the cluster's role already uses it and a new one would simply fail to authenticate.</li>
+      <li><strong>Installing Python dependencies</strong> — <code>uv sync --frozen</code>, falling back
+      to <code>uv sync</code>. Log: <code>var/log/install-uv.log</code>.</li>
+      <li><strong>Building the interface</strong> — <code>npm ci</code> then <code>npm run build</code>.
+      This is the slow step. Log: <code>var/log/install-npm.log</code>.</li>
+      <li><strong>Setting up PostgreSQL</strong> — creates the cluster in <code>var/postgres/data</code>
+      if it is not there, writes the managed block of <code>postgresql.conf</code>, starts it, and
+      creates the database and role. An existing cluster is kept and restarted, not replaced.</li>
+      <li><strong>Creating the schema</strong> — <code>app.cli bootstrap</code>: tables, the search
+      columns and indexes, the sixteen steward roles, the 141 relationship types, and the first
+      administrator. Log: <code>var/log/install-bootstrap.log</code>.</li>
+      <li><strong>Generating the TLS certificate</strong> — <em>only</em> with <code>--https</code>,
+      which is why the step counter reads <code>[n/7]</code> normally and <code>[n/8]</code> with TLS.
+      825 days, into <code>var/tls</code>.</li>
+      <li><strong>Starting and verifying</strong> — starts the application, waits for readiness, signs
+      in as the administrator, and fetches <code>/</code>.</li>
+    </ol>
+
+    <p>It is safe to stop and re-run. Nothing in it is destructive: an existing cluster is kept,
+    dependencies are re-synced, the interface is rebuilt, and <code>.env</code> is only rewritten if you
+    say so.</p>
+
+    <h2 id="layout">What it puts on disk</h2>
+
+    <p>Everything the installation owns is inside the installation directory. There is no
+    <code>/usr/local</code>, no <code>launchd</code> job unless you ask for one, no shared cluster.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Path</th><th>What it holds</th></tr></thead>
+      <tbody>
+        <tr><td><code>.env</code></td><td>Configuration and secrets. Mode <code>600</code>. Never committed, never packaged.</td></tr>
+        <tr><td><code>var/postgres/data/</code></td><td>The PostgreSQL cluster. <strong>This is the database.</strong></td></tr>
+        <tr><td><code>var/postgres/socket/</code></td><td>Its unix socket, kept out of the shared socket directory.</td></tr>
+        <tr><td><code>var/log/app.log</code></td><td>The application: uvicorn access lines, tracebacks, startup logging.</td></tr>
+        <tr><td><code>var/log/postgres.log</code></td><td>The database server log.</td></tr>
+        <tr><td><code>var/log/install-*.log</code></td><td>The installer's own logs, per step. First place to look at a failed install.</td></tr>
+        <tr><td><code>var/run/app.pid</code></td><td>The application's pidfile.</td></tr>
+        <tr><td><code>var/backups/</code></td><td>Where <code>./dgp backup</code> writes.</td></tr>
+        <tr><td><code>var/tls/</code></td><td><code>server.crt</code>, <code>server.key</code>, and a CSR if you made one.</td></tr>
+        <tr><td><code>backend/.venv/</code></td><td>The Python environment, created by <code>uv</code>.</td></tr>
+        <tr><td><code>frontend/dist/</code></td><td>The built interface — the files uvicorn serves at <code>/</code>.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="config">Configuration</h2>
+
+    <p>One file, <code>.env</code>, read by the application and by every script. Change a value and
+    restart: <code>./dgp restart</code>. To see what is actually in effect, with secrets masked, use
+    <code>./dgp config</code> — that reads it through the application's own settings, so it shows the
+    values the running server would use rather than what the file appears to say.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>DGP_ENV</code></td><td><code>production</code></td><td><code>production</code> or <code>development</code>. Production refuses a missing, short or published signing key.</td></tr>
+        <tr><td><code>DGP_HOST</code></td><td><code>127.0.0.1</code></td><td>Bind address. <code>0.0.0.0</code> to allow other machines.</td></tr>
+        <tr><td><code>DGP_HTTP_PORT</code></td><td><code>8080</code></td><td>Served when HTTPS is off.</td></tr>
+        <tr><td><code>DGP_HTTPS_PORT</code></td><td><code>8443</code></td><td>Served when HTTPS is on. The HTTP port is then not opened at all.</td></tr>
+        <tr><td><code>DGP_HTTPS_ENABLED</code></td><td><code>false</code></td><td>Managed by <code>./dgp https on|off</code>.</td></tr>
+        <tr><td><code>DGP_SSL_CERTFILE</code> / <code>DGP_SSL_KEYFILE</code></td><td>—</td><td>Filled in by <code>./dgp cert</code>; point them at your own pair instead if you have one.</td></tr>
+        <tr><td><code>DGP_WORKERS</code></td><td>from CPU count</td><td>uvicorn worker processes. The installer writes 1, 2 or 4 depending on the machine; 2 if the setting is missing entirely.</td></tr>
+        <tr><td><code>DGP_DOCS_ENABLED</code></td><td><code>true</code></td><td>Whether <code>/docs</code>, <code>/redoc</code> and <code>/openapi.json</code> are exposed.</td></tr>
+        <tr><td><code>DGP_CORS_ORIGINS</code></td><td>empty</td><td>Not needed in a normal install — the interface and the API share an origin.</td></tr>
+        <tr><td><code>DGP_TRUSTED_HOSTS</code></td><td><code>*</code></td><td><code>Host</code> header allow-list. Narrow this if the platform is reachable from a network.</td></tr>
+        <tr><td><code>DGP_FORWARDED_ALLOW_IPS</code></td><td><code>127.0.0.1</code></td><td>Whose <code>X-Forwarded-*</code> headers to believe. Only relevant behind a reverse proxy.</td></tr>
+        <tr><td><code>DGP_DB_HOST</code> / <code>DGP_DB_PORT</code></td><td><code>127.0.0.1</code> / <code>55432</code></td><td>This installation's cluster.</td></tr>
+        <tr><td><code>DGP_DB_NAME</code> / <code>DGP_DB_USER</code></td><td><code>data_governance</code> / <code>dg_admin</code></td><td>Database and role.</td></tr>
+        <tr><td><code>DGP_DB_PASSWORD</code></td><td>generated</td><td>Generated at install. Changing it here alone will <em>not</em> work — the role in the cluster has to change too.</td></tr>
+        <tr><td><code>DGP_DATABASE_URL</code></td><td>unset</td><td>Set it to use a database elsewhere — a managed PostgreSQL, say. It overrides all five settings above.</td></tr>
+        <tr><td><code>DGP_DB_POOL_SIZE</code> · <code>MAX_OVERFLOW</code> · <code>POOL_TIMEOUT</code> · <code>POOL_RECYCLE</code></td><td><code>5</code> · <code>5</code> · <code>30</code> · <code>1800</code></td><td>Connection pool, <em>per worker</em> — multiply by <code>DGP_WORKERS</code> for the real connection ceiling. Every connection also gets a 60-second <code>statement_timeout</code>.</td></tr>
+        <tr><td><code>DGP_DB_ECHO</code></td><td><code>false</code></td><td>Log every SQL statement. Very noisy; for debugging only.</td></tr>
+        <tr><td><code>DGP_SECRET_KEY</code></td><td>generated</td><td>Signs every session token. At least 32 characters, unique to this install. <strong>Changing it signs everyone out.</strong></td></tr>
+        <tr><td><code>DGP_ACCESS_TOKEN_EXPIRE_MINUTES</code></td><td><code>480</code></td><td>Session length — eight hours.</td></tr>
+        <tr><td><code>DGP_ADMIN_EMAIL</code> / <code>DGP_ADMIN_PASSWORD</code></td><td>—</td><td>Used <em>only</em> to seed the first administrator. Changing them later creates nothing and changes nothing.</td></tr>
+        <tr><td><code>DGP_STATIC_DIR</code></td><td>blank = <code>frontend/dist</code></td><td>Where the built interface is served from.</td></tr>
+        <tr><td><code>DGP_LOG_LEVEL</code></td><td><code>info</code></td><td><code>critical</code> … <code>trace</code>.</td></tr>
+        <tr><td><code>DGP_ACCESS_LOG</code></td><td><code>true</code></td><td>Whether uvicorn logs every request.</td></tr>
+        <tr><td><code>DGP_LOG_DIR</code></td><td>blank = <code>var/log</code></td><td>Where logs go.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note danger">
+      <div class="note-title">.env is the one file worth protecting</div>
+      <p>It holds the signing key and the database password, which is why it is mode <code>600</code>.
+      It is excluded from every release the build script produces, and the build actively searches the
+      staged tree and the git history for its values before packaging. Do not commit it, and do not
+      copy it into a ticket.</p>
+    </div>
+
+    <h2 id="reinstall">Re-running the installer, and upgrading</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>You want to</th><th>Do this</th></tr></thead>
+      <tbody>
+        <tr><td>Pick up new code in an existing install</td><td><code>./dgp rebuild</code> — re-syncs Python dependencies, rebuilds the interface, restarts. It does not touch <code>.env</code> or the database. Schema changes apply themselves at startup.</td></tr>
+        <tr><td>Change a port, or enable HTTPS</td><td>Edit <code>.env</code> and <code>./dgp restart</code>; for TLS, <code>./dgp https on</code> does both.</td></tr>
+        <tr><td>Repair a broken install</td><td><code>./install.sh</code> again, answering <em>no</em> when it offers to rewrite <code>.env</code>. The cluster and the data are kept.</td></tr>
+        <tr><td>Start completely fresh, same directory</td><td><code>./dgp reset</code> — drops the database and rebuilds it empty. <strong>Back up first.</strong></td></tr>
+        <tr><td>Move an installation to another machine</td><td>Install there, then <code>./dgp restore</code> a dump taken with <code>./dgp backup</code>. Do not copy <code>var/postgres</code> between machines.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note warn">
+      <div class="note-title">There is no migration tool yet</div>
+      <p>The schema is created and reconciled at startup — <code>create_all</code>, a cleanup pass, a
+      fingerprint check on the search columns, and idempotent seeding. That handles additions well and
+      does not handle a column that needs rewriting. Take a backup before upgrading across a schema
+      change, and read the startup log afterwards.</p>
+    </div>
+
+    <h2 id="dgp">The <code>dgp</code> command</h2>
+
+    <p>One entry point for everything an operator does. It is a thin wrapper over
+    <code>deploy/*.sh</code> and the backend's own CLI, so there is exactly one implementation of each
+    operation however you reach it. <code>./dgp help</code> prints the lot.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>./dgp start</code></td><td>PostgreSQL, then the application. Waits for each to be genuinely ready.</td></tr>
+        <tr><td><code>./dgp stop</code></td><td>The application, then PostgreSQL. Reverse order is not cosmetic — stopping the database first would cut the app off mid-request.</td></tr>
+        <tr><td><code>./dgp restart</code></td><td>Both, in order.</td></tr>
+        <tr><td><code>./dgp status</code></td><td>Up or down, port, pids, and whether it is <em>ready</em> rather than merely listening.</td></tr>
+        <tr><td><code>./dgp logs [app|postgres]</code></td><td>Follow the logs. Both together if unspecified.</td></tr>
+        <tr><td><code>./dgp health</code></td><td>Ask the running server: readiness and version.</td></tr>
+        <tr><td><code>./dgp doctor</code></td><td>The full check — binaries, cluster, <code>.env</code> and its mode, both services, configuration and database connectivity.</td></tr>
+        <tr><td><code>./dgp version</code></td><td>Version, root directory, URL and database. Answers even when <code>.env</code> is wrong or the database is down.</td></tr>
+        <tr><td><code>./dgp config</code></td><td>Effective configuration, secrets masked.</td></tr>
+        <tr><td><code>./dgp stats</code></td><td>Row counts per table. The quickest "is there anything in here?".</td></tr>
+        <tr><td><code>./dgp https [on|off]</code></td><td>Show or switch TLS, generating a certificate if needed, then restart.</td></tr>
+        <tr><td><code>./dgp cert [--force|csr|show]</code></td><td>Manage the certificate directly.</td></tr>
+        <tr><td><code>./dgp backup [file]</code></td><td><code>pg_dump</code> in custom format into <code>var/backups</code>.</td></tr>
+        <tr><td><code>./dgp restore &lt;file&gt;</code></td><td>Replace the database from a dump. Stops the app first and makes you type the database name.</td></tr>
+        <tr><td><code>./dgp reset</code></td><td>Drop the database and rebuild it empty. Same confirmation.</td></tr>
+        <tr><td><code>./dgp psql [args]</code></td><td><code>psql</code> against this deployment, already pointed at the right port and database.</td></tr>
+        <tr><td><code>./dgp passwd &lt;email&gt;</code></td><td>Set a user's password. There is no UI for this yet.</td></tr>
+        <tr><td><code>./dgp rebuild</code></td><td>Re-sync dependencies, rebuild the interface, restart.</td></tr>
+        <tr><td><code>./dgp autostart on|off</code></td><td>Start at login — <code>launchd</code> on macOS, a systemd <em>user</em> unit on Linux.</td></tr>
+        <tr><td><code>./dgp bootstrap</code></td><td>Re-run the schema and seed pass by hand. Idempotent.</td></tr>
+        <tr><td><code>./dgp pg …</code> · <code>./dgp app …</code></td><td>Pass a verb straight to one service: <code>./dgp app restart</code> restarts the application without touching PostgreSQL.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="checking-prod">Checking the services — a deployed install</h2>
+
+    <p>Two services, so two things to check. Start with the one command that covers both:</p>
+
+<pre><code>$ ./dgp status
+postgres   UP    port 55432  pid 41207  /path/to/install/var/postgres/data
+app        UP    port 8080   41284 41285 41286  http  ready
+</code></pre>
+
+    <p>PostgreSQL reporting UP means <code>pg_isready</code> answered — <em>accepting connections</em>,
+    not merely "a process exists". The application lists one pid per worker plus its supervisor.</p>
+
+    <p>Read the <em>last</em> column, not just UP. The application reports one of four things, and the
+    difference matters:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>It says</th><th>Meaning</th><th>Do this</th></tr></thead>
+      <tbody>
+        <tr><td><code>ready</code></td><td>Serving, and the database answers. This is healthy.</td><td>Nothing.</td></tr>
+        <tr><td><code>serving but NOT ready (database?)</code></td><td>The process is alive but the database is not answering. <strong>The failure this split was built to stop hiding.</strong></td><td><code>./dgp status</code> for PostgreSQL, then <code>./dgp logs postgres</code>.</td></tr>
+        <tr><td><code>port open, not responding</code></td><td>Something holds the port but is not answering the health check — possibly not this application at all.</td><td><code>./dgp doctor</code>, then check what owns the port.</td></tr>
+        <tr><td><code>DOWN</code></td><td>Nothing is on the port.</td><td><code>./dgp start</code>, then <code>./dgp logs app</code> if it does not come up.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Deeper, in increasing order of thoroughness:</p>
+
+<pre><code>./dgp health        # ask the server: readiness + version
+./dgp doctor        # binaries, cluster, .env mode, both services, config, connectivity
+./dgp stats         # row counts per table — proves the schema and data are really there
+</code></pre>
+
+    <h3 id="check-pg">Checking PostgreSQL specifically</h3>
+
+<pre><code>deploy/postgres.sh status      # or: ./dgp pg status
+./dgp logs postgres            # tail -f var/log/postgres.log
+./dgp psql -c 'select version()'
+./dgp psql -c '\dt'            # the 26 tables
+./dgp stats                    # row counts, via the application's own models
+</code></pre>
+
+    <p>The cluster is found by its own pidfile, <code>var/postgres/data/postmaster.pid</code>, which
+    PostgreSQL maintains itself, and confirmed with <code>pg_isready</code> — so "UP" means
+    <em>accepting connections</em>, not merely "a process exists".</p>
+
+    <p>To check it with the machine's own tools, remember the port and the socket are not the usual
+    ones:</p>
+
+<pre><code>pg_isready -h 127.0.0.1 -p 55432
+ps aux | grep '[p]ostgres.*var/postgres/data'
+lsof -nP -iTCP:55432 -sTCP:LISTEN
+</code></pre>
+
+    <div class="note warn">
+      <div class="note-title">A plain <code>psql</code> will not find this database</div>
+      <p><code>psql data_governance</code> connects to the machine's PostgreSQL on 5432 — a completely
+      different server, which in a deployment-only setup has no such database. Use
+      <code>./dgp psql</code>, which supplies the port, the role and the password.</p>
+    </div>
+
+    <h3 id="check-app">Checking the application specifically</h3>
+
+<pre><code>deploy/app.sh status           # or: ./dgp app status
+./dgp logs app                 # tail -f var/log/app.log
+curl -s http://127.0.0.1:8080/api/health        # alive?
+curl -s http://127.0.0.1:8080/api/health/ready  # database answering?
+curl -sI http://127.0.0.1:8080/                 # is the interface being served?
+</code></pre>
+
+    <p>With HTTPS on, the port is 8443, the scheme is <code>https</code>, and a self-signed certificate
+    means <code>curl</code> needs <code>-k</code>.</p>
+
+    <p><strong>There is no frontend service to check.</strong> The interface is files, not a process —
+    so the question "is the frontend up?" becomes "is the build there, and is it being served?":</p>
+
+<pre><code>ls -la frontend/dist/index.html    # does the build exist?
+curl -sI http://127.0.0.1:8080/    # 200 and text/html = served
+                                   # 503 = no build; run ./dgp rebuild
+</code></pre>
+
+    <p>A missing build is reported rather than hidden: <code>/</code> answers <code>503</code> with the
+    command that fixes it, the startup log carries a warning, and <code>deploy/app.sh start</code> warns
+    before it even starts.</p>
+
+    <h2 id="checking-dev">Checking the services — the development stack</h2>
+
+    <p>Three processes here, and one script each. Same five verbs throughout:
+    <code>start</code>, <code>stop</code>, <code>restart</code>, <code>status</code>,
+    <code>logs</code>.</p>
+
+<pre><code>services/all.sh status        # all three at once
+services/all.sh start         # postgres → backend → frontend
+services/all.sh stop          # frontend → backend → postgres
+services/all.sh logs          # tail backend and frontend together
+</code></pre>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Service</th><th>Check it with</th><th>Port</th><th>Its log</th></tr></thead>
+      <tbody>
+        <tr><td><strong>PostgreSQL</strong> (Homebrew's cluster)</td><td><code>services/postgres.sh status</code></td><td>5432</td><td><code>$(brew --prefix)/var/log/postgresql@17.log</code></td></tr>
+        <tr><td><strong>Backend</strong> (FastAPI / uvicorn)</td><td><code>services/backend.sh status</code></td><td>8000</td><td><code>services/logs/backend.log</code></td></tr>
+        <tr><td><strong>Frontend</strong> (Vite dev server)</td><td><code>services/frontend.sh status</code></td><td>3000</td><td><code>services/logs/frontend.log</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>By hand, if you prefer:</p>
+
+<pre><code>pg_isready -h localhost -p 5432                     # database
+curl -s http://127.0.0.1:8000/api/health            # backend
+curl -sI http://localhost:3000/                     # frontend (dev server)
+curl -s http://localhost:3000/api/health            # frontend's proxy to the backend
+open http://localhost:8000/docs                     # interactive API docs
+</code></pre>
+
+    <p>That fourth line is the one worth remembering. In development the browser reaches the API
+    <em>through</em> Vite's proxy, so checking <code>:8000</code> directly proves the backend is up but
+    not that the page can talk to it. Checking <code>:3000/api/health</code> proves the whole path.</p>
+
+    <p>Three behaviours are shared by every script in both stacks:</p>
+
+    <ul>
+      <li><strong>A service is identified by whoever holds its port</strong>, not only by its pidfile.
+      So <code>stop</code> works on a server you started by hand in another terminal, and a stale
+      pidfile can never point the kill at an unrelated process that inherited the number.</li>
+      <li><strong><code>start</code> is idempotent</strong> and waits for genuine readiness —
+      <code>pg_isready</code>, the health endpoint, the port bound — printing the tail of the log if it
+      times out rather than claiming success.</li>
+      <li><strong><code>stop</code> is SIGTERM, a grace period, then SIGKILL</strong> — 15 seconds in the
+      development stack, 20 in a deployment, which also asks uvicorn for a 20-second graceful
+      shutdown so in-flight requests finish. The port is re-checked before success is reported.</li>
+    </ul>
+
+    <div class="note warn">
+      <div class="note-title">If you ever ran <code>brew services start postgresql@17</code></div>
+      <p>launchd will restart PostgreSQL after <code>services/postgres.sh stop</code>, so a stop that
+      stays stopped becomes impossible. Unregister it first:
+      <code>brew services stop postgresql@17</code>. Both stacks drive PostgreSQL with
+      <code>pg_ctl</code> deliberately, for exactly this reason.</p>
+    </div>
+
+    <p>Development hot reload: <code>DG_RELOAD=1 services/backend.sh restart</code>. (The deployed
+    equivalent is <code>DGP_RELOAD</code>, which drops to a single worker and says so — it exists for
+    debugging an install, not for running one.)</p>
+
+    <h2 id="logs">Where every log is</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Stack</th><th>What</th><th>Path</th></tr></thead>
+      <tbody>
+        <tr><td>Deployed</td><td>Application — access lines, tracebacks, startup</td><td><code>var/log/app.log</code></td></tr>
+        <tr><td>Deployed</td><td>PostgreSQL server</td><td><code>var/log/postgres.log</code></td></tr>
+        <tr><td>Deployed</td><td>The installer, per step</td><td><code>var/log/install-uv.log</code>, <code>install-npm.log</code>, <code>install-bootstrap.log</code></td></tr>
+        <tr><td>Deployed</td><td>Restore problems</td><td><code>var/log/restore.log</code></td></tr>
+        <tr><td>Deployed</td><td>Autostart, if enabled</td><td><code>var/log/autostart.log</code></td></tr>
+        <tr><td>Development</td><td>Backend</td><td><code>services/logs/backend.log</code></td></tr>
+        <tr><td>Development</td><td>Frontend (Vite)</td><td><code>services/logs/frontend.log</code></td></tr>
+        <tr><td>Development</td><td>PostgreSQL</td><td><code>$(brew --prefix)/var/log/postgresql@17.log</code> — Homebrew's own file, so its history stays in one place</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Both streams go to the application log deliberately: uvicorn's access lines arrive on stdout
+    while tracebacks and the bootstrap's own logging arrive on stderr, and the pair only makes sense
+    read together. Every response carries an <code>X-Request-ID</code>, so a user's report can be tied
+    to a line in the log.</p>
+
+<pre><code>./dgp logs              # both, followed
+./dgp logs app          # just the application
+./dgp logs postgres     # just the database
+grep -i error var/log/app.log | tail -40
+grep 'Traceback' -A 20 var/log/app.log | tail -60
+</code></pre>
+
+    <h2 id="health">Health endpoints</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Endpoint</th><th>Answers</th><th>Use it for</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET /api/health</code></td><td>The process is alive. Does not touch the database.</td><td>Liveness — should this process be restarted?</td></tr>
+        <tr><td><code>GET /api/health/ready</code></td><td>The database answers and the schema bootstrap finished.</td><td>Readiness — should traffic be sent here?</td></tr>
+        <tr><td><code>GET /api/version</code></td><td>Version and environment.</td><td>Confirming what is actually deployed.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">Why this is split, and why it is the check that matters</div>
+      <p>Early in the project PostgreSQL crashed while uvicorn stayed up, and the only health check kept
+      answering <code>200</code> throughout — because it never touched the database. A live process over
+      a dead database is the failure mode most worth catching, so liveness and readiness are now
+      separate questions with separate answers. <code>./dgp status</code> and <code>./dgp health</code>
+      both report readiness, not just liveness. If you point a monitor at one endpoint, point it at
+      <code>/api/health/ready</code>.</p>
+    </div>
+
+    <h2 id="ports">Ports, and finding out what holds one</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Port</th><th>Service</th><th>Stack</th><th>Set by</th></tr></thead>
+        <tbody>
+          <tr><td><strong>3000</strong></td><td>Vite dev server</td><td>Development</td><td><code>FRONTEND_PORT</code></td></tr>
+          <tr><td><strong>8000</strong></td><td>uvicorn (API only)</td><td>Development</td><td><code>BACKEND_PORT</code></td></tr>
+          <tr><td><strong>5432</strong></td><td>PostgreSQL (Homebrew's shared cluster)</td><td>Development</td><td><code>PG_PORT</code></td></tr>
+          <tr><td><strong>8080</strong></td><td>uvicorn — interface <em>and</em> API</td><td>Deployed</td><td><code>DGP_HTTP_PORT</code></td></tr>
+          <tr><td><strong>8443</strong></td><td>The same, with TLS</td><td>Deployed</td><td><code>DGP_HTTPS_PORT</code></td></tr>
+          <tr><td><strong>55432</strong></td><td>PostgreSQL (this install's own cluster)</td><td>Deployed</td><td><code>DGP_DB_PORT</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre><code>lsof -nP -iTCP:8080 -sTCP:LISTEN     # who holds it
+ps -o pid,ppid,etime,command -p "$(cat var/run/app.pid)"
+</code></pre>
+
+    <p>Every script names the pid when a port it wants is already held, so a clash tells you what to
+    stop rather than just failing.</p>
+
+    <h2 id="admin-daily">Daily and weekly administration</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>When</th><th>Do</th><th>Looking for</th></tr></thead>
+      <tbody>
+        <tr><td>Daily</td><td><code>./dgp status</code></td><td>Both services UP and the app <code>ready</code>.</td></tr>
+        <tr><td>Daily</td><td><code>grep -i error var/log/app.log | tail -40</code></td><td>Tracebacks, repeated 500s, database connection errors.</td></tr>
+        <tr><td>Daily (automate it)</td><td><code>./dgp backup</code></td><td>A dump in <code>var/backups</code>. Copy it off the machine — a backup beside the database it protects is not a backup.</td></tr>
+        <tr><td>Weekly</td><td><code>./dgp doctor</code></td><td>Everything at once, including <code>.env</code>'s file mode.</td></tr>
+        <tr><td>Weekly</td><td><code>./dgp stats</code></td><td>Growth, and whether anything looks unexpectedly empty.</td></tr>
+        <tr><td>Weekly</td><td>The People page</td><td>Leavers still active; types with no steward — see below.</td></tr>
+        <tr><td>Weekly</td><td>Old backups</td><td><code>var/backups</code> is not pruned for you.</td></tr>
+        <tr><td>After any code change</td><td><code>./dgp rebuild</code>, then read the startup log</td><td>The facet registry validator refuses to boot on an inconsistency and names it precisely.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note warn">
+      <div class="note-title">The single most common support question has an administrative cause</div>
+      <p>"I got a 403 and I do not know why" is almost always an object type with <strong>no steward
+      assigned</strong>. An unstaffed type is administrator-only, and it blocks non-administrators from
+      relating anything to it — because a change request nobody could ever approve is refused at the
+      point of asking rather than left to rot. Keep all sixteen types staffed. The
+      <a href="usage.html#setup-people">People setup guide</a> covers who should hold which role.</p>
+    </div>
+
+    <h2 id="passwords">Passwords and accounts</h2>
+
+    <p>Passwords are bcrypt hashes and nobody can read one, administrators included. There is no reset
+    flow in the interface yet, which makes this the escape hatch:</p>
+
+<pre><code>./dgp passwd someone@example.com
+</code></pre>
+
+    <p>It prompts twice without echoing, refuses anything under eight characters, refuses an email it
+    cannot find, and then writes the new hash. There is no way to read the old one. On the
+    development stack there is no <code>dgp</code>, so an administrator recreates the account
+    instead.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Task</th><th>How</th></tr></thead>
+      <tbody>
+        <tr><td>Change the first administrator's password</td><td><code>./dgp passwd</code> with their email. Do this if the installer generated one.</td></tr>
+        <tr><td>Create more administrators</td><td>In the interface, People → Add. Have at least two so nobody is locked out.</td></tr>
+        <tr><td>Handle a leaver</td><td>Set the account inactive. Sign-in is refused; their history stays intact. Prefer this to deleting.</td></tr>
+        <tr><td>Sign everyone out at once</td><td>Change <code>DGP_SECRET_KEY</code> and restart. Every existing token becomes invalid.</td></tr>
+        <tr><td>Assign a Policy, Metric or AI steward role</td><td><code>PUT /api/users/{id}</code> with a <code>steward_facets</code> array — the person form currently lists only six of the sixteen. They work identically once set.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note danger">
+      <div class="note-title">Change the seeded administrator's password before anyone else uses this</div>
+      <p><code>admin@datagovern.com</code> / <code>admin123</code> is a <em>development</em> default that
+      exists so a fresh development database is usable, and it is in the source. A deployment never uses
+      it — the installer asks you for a password or generates one. If you are running the development
+      stack for anything shared, change it.</p>
+    </div>
+
+    <h2 id="backup">Backup and restore</h2>
+
+<pre><code>./dgp backup                             # var/backups/data_governance-20260926-101500.dump
+./dgp backup /elsewhere/before-upgrade.dump
+./dgp restore var/backups/....dump       # stops the app, replaces the database, restarts
+</code></pre>
+
+    <p>Custom format, so it is compressed and <code>pg_restore</code> can filter or parallelise it.
+    A restore makes you type the database name to confirm, and stops the application first — a restore
+    over a live schema is a coin toss. Problems are written to <code>var/log/restore.log</code> rather
+    than scrolling past.</p>
+
+    <p><strong>What a dump does and does not contain.</strong> It holds every asset, relationship,
+    change request, approval and audit record — the whole catalog. It does <em>not</em> hold
+    <code>.env</code>, so keep a copy of your signing key somewhere safe as well: restoring a database
+    with a different <code>DGP_SECRET_KEY</code> works, but signs everyone out.</p>
+
+    <div class="note">
+      <div class="note-title">Back up before</div>
+      <p>Any upgrade that could change the schema · <code>./dgp reset</code> · a restore ·
+      any bulk edit you are not certain about · moving the installation.</p>
+    </div>
+
+    <h2 id="database">Working in the database</h2>
+
+<pre><code>./dgp psql                               # interactive
+./dgp psql -c '\dt'                      # the 26 tables
+./dgp psql -c 'select count(*) from asset_relationships'
+./dgp stats                              # row counts per table, prettier
+</code></pre>
+
+    <div class="note danger">
+      <div class="note-title">Two traps if you write SQL against this database by hand</div>
+      <p><strong>Enum case.</strong> SQLAlchemy stores enum <em>names</em> (<code>ACTIVE</code>) while
+      the API returns enum <em>values</em> (<code>active</code>). Raw SQL sees the former, so
+      <code>where status = 'active'</code> matches nothing. Wrap enum columns in <code>lower()</code>.</p>
+      <p><strong>Direct writes are not audited.</strong> The audit trail is a listener inside the
+      application's database session. A change made in <code>psql</code> is invisible to it — no author,
+      no before-and-after, no provenance. Use the interface or the API for anything that should have a
+      history, and treat <code>psql</code> as read-only unless you are repairing something.</p>
+    </div>
+
+    <h2 id="https">HTTPS</h2>
+
+<pre><code>./dgp https            # is it on?
+./dgp https on         # generate a certificate if needed, enable, restart
+./dgp https off        # back to plain HTTP, restart
+./dgp cert show        # subject, dates, SAN list
+./dgp cert --force     # regenerate
+./dgp cert csr         # a signing request for your own CA instead
+</code></pre>
+
+    <p>HTTPS is a switch, not a second server. With it on, the listener binds the HTTPS port with the
+    configured certificate and <strong>the plain HTTP port is not opened at all</strong> — one live URL,
+    never an ambiguous pair. The certificate lives in <code>var/tls</code> and lasts 825 days, which is
+    the maximum most browsers still accept.</p>
+
+    <p>A self-signed certificate encrypts the connection, which is what stops a password crossing the
+    network in clear text. What it cannot do is prove <em>identity</em>, so every browser shows a
+    warning and that warning is honest. For one that does not warn, have your organisation's CA sign the
+    CSR, or point <code>DGP_SSL_CERTFILE</code> and <code>DGP_SSL_KEYFILE</code> at a certificate you
+    already have.</p>
+
+    <p>The Subject Alternative Name list is the part that matters. Modern browsers ignore the Common
+    Name entirely — a certificate with no SAN entry for the exact host in the address bar is rejected
+    however valid it otherwise is — so every name this server can be reached by is listed. If you start
+    reaching the platform by a new hostname, regenerate.</p>
+
+    <h2 id="autostart">Starting at login</h2>
+
+<pre><code>./dgp autostart on     # launchd on macOS, a systemd user unit on Linux
+./dgp autostart        # is it on, and where is the definition
+./dgp autostart off
+</code></pre>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Platform</th><th>What is written</th><th>Inspect it with</th></tr></thead>
+      <tbody>
+        <tr><td>macOS</td><td><code>~/Library/LaunchAgents/com.datagovernance.platform.plist</code> — <code>RunAtLoad</code>, no <code>KeepAlive</code></td><td><code>launchctl list | grep datagovernance</code>, and <code>var/log/autostart.log</code></td></tr>
+        <tr><td>Linux</td><td><code>~/.config/systemd/user/data-governance-platform.service</code> — a <em>user</em> unit, <code>Type=oneshot</code> with <code>RemainAfterExit</code></td><td><code>systemctl --user status data-governance-platform</code>, <code>journalctl --user -u data-governance-platform</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Two deliberate details. <strong>No <code>KeepAlive</code></strong>: the start script launches the
+    services and exits, so launchd would otherwise restart it in a loop forever. And a <strong>user unit,
+    not a system one</strong> — everything this deployment owns belongs to this user, and a root-owned
+    service writing into a user's home directory is how permissions get broken. On Linux, user services
+    stop when you log out; to run at boot instead, enable lingering:</p>
+
+<pre><code>sudo loginctl enable-linger "$(id -un)"
+</code></pre>
+
+    <h2 id="release">Cutting a release</h2>
+
+    <p><code>build.sh</code> packages the project for someone else to install. It asks where to put the
+    release and remembers the answer for next time.</p>
+
+<pre><code>sh build.sh                     # asks where it goes
+./build.sh --out DIR            # answer without asking
+./build.sh --version 1.1.0      # set the version everywhere, then build
+./build.sh --git                # build and commit, ready to push
+./build.sh --test-install       # also install the result for real, then tear it down
+</code></pre>
+
+    <p>The output directory keeps the same path every time, so it can <em>be</em> your local git
+    repository: build, commit, push, add a feature, build again — same folder, same remote, history
+    intact. Only the archives carry a version number.</p>
+
+    <p>Three things it insists on, because this is the step where mistakes become public and
+    permanent:</p>
+
+    <ol class="steps">
+      <li><strong>The package is built from an allow-list, never by excluding.</strong> An exclude list
+      is a promise that you thought of everything, and the first thing anyone forgets is the thing that
+      leaks. A new file in the working tree is absent from the release until someone adds it to the
+      list.</li>
+      <li><strong>It refuses to package a secret.</strong> The staged tree <em>and the git history</em>
+      — a push sends commits, not files — are searched for private keys, populated credential settings,
+      database dumps, and the literal values in this tree's own <code>.env</code> and
+      <code>.env.development</code>.</li>
+      <li><strong>It refuses to package something that does not build.</strong> The interface is
+      compiled, every Python file byte-compiled and imported, the facet registry validated, and every
+      shell script parsed, before anything is copied. A broken release is worse than no release.</li>
+    </ol>
+
+    <p>What ships is the application, the deployment scripts, the installer and one README. What stays
+    behind: the development documentation, the design notes, the development service scripts, the sample
+    data and every <code>.env</code> but <code>.env.example</code>. The staging step uses
+    <code>rsync --delete</code>, so it also refuses to write into a directory that already holds
+    something which is not a release of this project.</p>
+
+    <h2 id="uninstall">Uninstalling</h2>
+
+    <ol class="steps">
+      <li><strong>Back up first if you might want the data</strong> — <code>./dgp backup</code>, and copy
+      the dump somewhere else.</li>
+      <li><strong>Turn off autostart</strong> — <code>./dgp autostart off</code>. This is the only thing
+      that lives outside the directory.</li>
+      <li><strong>Stop both services</strong> — <code>./dgp stop</code>, then <code>./dgp status</code>
+      to confirm both ports are released.</li>
+      <li><strong>Delete the directory.</strong> The cluster, the logs, the backups and the configuration
+      are all inside it.</li>
+    </ol>
+
+    <p>Nothing else on the machine is touched. The PostgreSQL, Node and uv installations remain, along
+    with any other cluster on 5432.</p>
+
+    <h2 id="install-faq">Installation troubleshooting</h2>
+
+    <p>For questions about <em>using</em> the catalog — permissions, relationships, search, change
+    requests — see the <a href="usage.html#faq">usage FAQ</a>. This table is about installing and
+    running it.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead>
+      <tbody>
+        <tr><td><strong>"do not run this as root"</strong></td><td>Exactly that. PostgreSQL refuses to start as root and the install would be owned by the wrong user. Run it as the operating user.</td></tr>
+        <tr><td><strong>"Node.js 20 or newer is required"</strong></td><td>Vite 8 will not build on 18. Upgrade Node, or use <code>--skip-build</code> with an existing <code>frontend/dist</code>.</td></tr>
+        <tr><td><strong>"the existing cluster is PostgreSQL 17 but the binaries are 18"</strong></td><td>A cluster is bound to its major version. Install the matching <code>postgresql@17</code>, point <code>DGP_PG_BINDIR</code> at it, or remove <code>var/postgres</code> to start a new cluster — which deletes its data.</td></tr>
+        <tr><td><strong>"port N is already in use by pid …"</strong></td><td>Something holds it. If it is a previous install of this platform the installer offers to stop it; otherwise pick another port with <code>--http-port</code> / <code>--db-port</code>.</td></tr>
+        <tr><td><strong>"port N is privileged (below 1024)"</strong></td><td>It would need root. Use 1024 or above and put a reverse proxy in front if you need 80 or 443.</td></tr>
+        <tr><td><strong><code>uv sync</code> or <code>npm ci</code> failed</strong></td><td>The real error is in <code>var/log/install-uv.log</code> or <code>install-npm.log</code>. Usually no network, or a Node version mismatch.</td></tr>
+        <tr><td><strong>Schema bootstrap failed</strong></td><td><code>var/log/install-bootstrap.log</code>. If it names the facet registry, that guard is intentional and the message states the exact problem.</td></tr>
+        <tr><td><strong>"sign-in check returned HTTP …"</strong></td><td>The application is up but the administrator login did not work. Check <code>var/log/app.log</code>; then <code>./dgp passwd</code> to set a password you are sure of.</td></tr>
+        <tr><td><strong>The app will not start: "postgres is not running"</strong></td><td>The application's first action is bringing the schema up to date, so the database is not optional. <code>./dgp start</code> handles the order for you.</td></tr>
+        <tr><td><strong>Status says "serving but NOT ready"</strong></td><td>Alive, but the database is not answering. Check PostgreSQL status and <code>var/log/postgres.log</code>. This is the case the split health check exists to make visible.</td></tr>
+        <tr><td><strong><code>/</code> answers 503 "The user interface has not been built"</strong></td><td>There is no <code>frontend/dist</code>. <code>./dgp rebuild</code>, or <code>cd frontend &amp;&amp; npm ci &amp;&amp; npm run build</code>. The API is unaffected.</td></tr>
+        <tr><td><strong>A deep link like <code>/assets/systems/12</code> 404s</strong></td><td>Should not happen — the SPA fallback covers it. If it does, the request is not reaching this server; check whatever is in front of it.</td></tr>
+        <tr><td><strong>The browser keeps loading an old version after an upgrade</strong></td><td>A hard reload. <code>index.html</code> is sent <code>no-store</code>, so this points at a cache in front of the app, not at the app.</td></tr>
+        <tr><td><strong>Refused to boot: the signing key</strong></td><td>Production refuses a missing key, one under 32 characters, and — by digest — the published development key. Generate one: <code>openssl rand -hex 32</code>.</td></tr>
+        <tr><td><strong>Everyone was signed out at once</strong></td><td><code>DGP_SECRET_KEY</code> changed. Every existing token became invalid. Signing in again is all that is needed.</td></tr>
+        <tr><td><strong>The browser warns about the certificate</strong></td><td>Expected with a self-signed one, and the warning is honest. Accept it once, or have your CA sign the CSR from <code>./dgp cert csr</code>.</td></tr>
+        <tr><td><strong>HTTPS is on but the old port stopped working</strong></td><td>By design — with TLS on, the plain HTTP port is not opened at all. Use the HTTPS port.</td></tr>
+        <tr><td><strong>PostgreSQL restarts itself after a stop</strong></td><td>It is registered with <code>brew services</code>. <code>brew services stop postgresql@17</code>.</td></tr>
+        <tr><td><strong><code>psql data_governance</code> says the database does not exist</strong></td><td>That connects to the machine's PostgreSQL on 5432. Use <code>./dgp psql</code>.</td></tr>
+        <tr><td><strong>The development frontend will not start, port in use</strong></td><td><code>vite.config.ts</code> sets <code>strictPort</code>, so it fails loudly rather than moving. Free 3000 or set <code>FRONTEND_PORT</code>.</td></tr>
+        <tr><td><strong><code>./dgp</code> says "no Python environment"</strong></td><td><code>backend/.venv</code> is missing. <code>./install.sh</code>, or <code>cd backend &amp;&amp; uv sync</code>.</td></tr>
+        <tr><td><strong><code>./dgp</code> says to run the installer</strong></td><td>There is no <code>.env</code>, so this is not an installed copy. Run <code>./install.sh</code>.</td></tr>
+        <tr><td><strong>Everything looks right and it still will not work</strong></td><td><code>./dgp doctor</code>. It checks the binaries, the cluster, the configuration, both services and database connectivity in one pass, and names what is wrong.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="pagenav">
+      <a href="usage.html"><span class="kicker">Next</span><strong>Using the product →</strong>
+      Sign in, set up stewards, and put a real estate into the catalog.</a>
+      <a href="index.html"><span class="kicker">Back</span><strong>← Overview</strong>
+      What the platform is, the concepts, and how the pieces fit.</a>
+    </div>
+
+    <div class="footer">
+      <span>DataGovern — installation and operations.</span>
+      <span>Written against the Phase&nbsp;1 catalog.</span>
+    </div>
+
+  </main>
+
+  <nav class="toc" aria-label="On this page"></nav>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

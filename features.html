@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Features — DataGovern Documentation</title>
+<meta name="description" content="Complete feature reference for DataGovern: every object type field by field, every enum, all 141 relationship types, search scoring, approvals, audit and the API surface.">
+<link rel="stylesheet" href="assets/docs.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <button class="icon-btn menu-btn" data-menu-toggle aria-expanded="false" aria-label="Open navigation">☰</button>
+  <a class="brand" href="index.html"><span class="mark">DG</span> DataGovern <small>Documentation</small></a>
+  <nav class="topnav">
+    <a href="index.html">Overview</a>
+    <a href="install.html">Install &amp; operate</a>
+    <a href="features.html" aria-current="page">Features</a>
+    <a href="usage.html">Using the product</a>
+    <a href="../README.md">README</a>
+    <button class="icon-btn" data-theme-toggle type="button">☾</button>
+  </nav>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <h4>Feature reference</h4>
+    <a href="#at-a-glance">Feature map</a>
+    <a href="#model">The catalog model</a>
+    <a href="#shared">Columns every object has</a>
+    <a href="#shared-enums">Shared value sets</a>
+
+    <h4>Data catalog</h4>
+    <a href="#data-catalog">Overview</a>
+    <a href="#f-system">System</a>
+    <a href="#f-dataset">Dataset</a>
+    <a href="#f-attribute">Attribute</a>
+    <a href="#f-glossary">Glossary term</a>
+    <a href="#f-project">Project</a>
+    <a href="#f-process">Process</a>
+    <a href="#f-policy">Policy</a>
+    <a href="#f-metric">Metric</a>
+
+    <h4>AI catalog</h4>
+    <a href="#ai-catalog">Overview</a>
+    <a href="#f-ai-application">AI Application</a>
+    <a href="#f-ai-agent">AI Agent</a>
+    <a href="#f-ai-model">AI Model</a>
+    <a href="#f-model-endpoint">Model Endpoint</a>
+    <a href="#f-knowledge-base">Knowledge Base</a>
+    <a href="#f-mcp-server">MCP Server</a>
+    <a href="#f-ai-tool">AI Tool</a>
+    <a href="#f-prompt-template">Prompt Template</a>
+    <a href="#scanner">Scanner-ready columns</a>
+
+    <h4>Connecting things</h4>
+    <a href="#relationships">Relationships</a>
+    <a href="#rel-catalogue">All 141 types</a>
+    <a href="#hierarchy">Hierarchy</a>
+    <a href="#graph">The graph view</a>
+
+    <h4>Finding things</h4>
+    <a href="#search">Search</a>
+    <a href="#search-filters">Query filters</a>
+    <a href="#export">Excel export</a>
+
+    <h4>Governing things</h4>
+    <a href="#governance">Change requests</a>
+    <a href="#approvals">Approval routing</a>
+    <a href="#audit">Audit trail</a>
+    <a href="#people">People &amp; stewardship</a>
+    <a href="#security">Security</a>
+
+    <h4>Interfaces</h4>
+    <a href="#ui">Screens</a>
+    <a href="#api">API surface</a>
+    <a href="#not-features">Deliberate omissions</a>
+
+    <h4>Elsewhere</h4>
+    <a href="install.html">Install &amp; operate</a>
+    <a href="install.html#prod-architecture">Deployed architecture</a>
+    <a href="install.html#config">Configuration settings</a>
+    <a href="usage.html">Using the product</a>
+    <a href="index.html">Overview</a>
+  </aside>
+
+  <main class="content">
+
+    <h1>Feature reference</h1>
+    <p class="lede">Everything the platform does, in detail: every object type field by field, every
+    value an enum accepts, all 141 relationship types, how search is scored, how approvals are routed,
+    what the audit trail records and what the API exposes.</p>
+
+    <p>If you are looking for <em>how to do something</em> rather than <em>what exists</em>, the
+    <a href="usage.html">usage guide</a> is the companion to this page.</p>
+
+    <h2 id="at-a-glance">Feature map</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Area</th><th>What you get</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Cataloguing</strong></td><td>17 object types across a data catalog and an AI catalog, each with a full field set, automatic reference numbers, lifecycle status and data classification.</td></tr>
+        <tr><td><strong>Relationships</strong></td><td>141 typed, directional relationship kinds out of the box — 55 of them crossing between the data catalog and the AI catalog — each reading as a sentence both ways.</td></tr>
+        <tr><td><strong>Graph</strong></td><td>An interactive neighbourhood view of any object to three hops, with children nested inside their parents, colour by facet, shape by catalog, and honest truncation.</td></tr>
+        <tr><td><strong>Search</strong></td><td>One box over every type plus people. Ranked full text, typo tolerance, exact reference matching, prefix boost and usage boost, with <code>type:</code> and <code>status:</code> filters and per-type result counts.</td></tr>
+        <tr><td><strong>Export</strong></td><td>Any search exports to an Excel workbook — one sheet per type, every column of the object, mandatory columns headed in red, filters and frozen headers applied.</td></tr>
+        <tr><td><strong>Change control</strong></td><td>Anyone can raise a change request on anything; stewards and administrators decide. Relationship changes collect one approval per facet involved and apply themselves on the last approval.</td></tr>
+        <tr><td><strong>Audit</strong></td><td>Structural capture of every write, with the before and after of each field, the acting user, and how the change arrived.</td></tr>
+        <tr><td><strong>Access control</strong></td><td>Administrators, per-facet stewards and read-only users, enforced at the API on every write path.</td></tr>
+        <tr><td><strong>AI governance</strong></td><td>EU AI Act risk tiers, intended purpose and human oversight, agent autonomy and delegated authority, endpoint residency and prompt retention, MCP trust status, tool behaviour hints, prompt content hashes.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="model">The catalog model</h2>
+
+    <p>Every object type is declared once in a central <em>facet registry</em>. One registry entry
+    carries the route slug, the database table, the ORM model, the plural and singular display names, the
+    change-request target name, the reference prefix, the catalog group, the containment parent, and the
+    search weighting. Everything else in the product — routes, permissions, audit coverage, the graph's
+    nesting rules, the export's sheet list, the search index definition — is derived from it rather than
+    restated, and a validator refuses to start the application if any of it is inconsistent.</p>
+
+    <p>The practical consequence for you: the seventeen types behave identically. There is no feature
+    that works on datasets but not on agents.</p>
+
+    <h3 id="shared">Columns every object has</h3>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>Internal numeric key. Unique per table, not across tables, which is why the graph keys nodes as <code>facet:id</code>.</td></tr>
+        <tr><td>name <span class="pill req">required</span></td><td>The display name. Change requests carry <code>title</code> instead.</td></tr>
+        <tr><td>reference_number</td><td>Assigned on creation from the facet's prefix and the next id — <code>SYS-001</code>, <code>AGT-014</code>. Unique and indexed; you cannot set or change it.</td></tr>
+        <tr><td>description</td><td>Free prose. Weighted into search at the "prose" level.</td></tr>
+        <tr><td>lifecycle_status</td><td><code>active</code> · <code>inactive</code> · <code>obsolete</code>. Defaults to active.</td></tr>
+        <tr><td>created_by / updated_by</td><td>The user who created the object and the one who last changed it. Shown as names on the detail page and in the export, never as raw ids.</td></tr>
+        <tr><td>created_at / updated_at</td><td>Timestamps, maintained by the database.</td></tr>
+        <tr><td>search_vector</td><td>A generated full-text column. Never exported, never shown, rebuilt automatically when its definition changes.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="shared-enums">Shared value sets</h3>
+
+    <p>Reused verbatim across facets rather than re-invented per type, so a filter or a report means the
+    same thing everywhere.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Set</th><th>Values</th><th>Used by</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Lifecycle status</strong></td><td><code>active</code> <code>inactive</code> <code>obsolete</code></td><td>Every object</td></tr>
+        <tr><td><strong>Data classification</strong></td><td><code>public</code> <code>internal</code> <code>confidential</code> <code>restricted</code></td><td>System, Dataset, Attribute, Policy, AI Application, AI Agent, AI Model, Knowledge Base, AI Tool, MCP Server; Model Endpoint as <em>approved</em> classification</td></tr>
+        <tr><td><strong>Environment</strong></td><td><code>production</code> <code>staging</code> <code>development</code> <code>test</code></td><td>System, AI Application, AI Agent, Model Endpoint, MCP Server (as host environment)</td></tr>
+        <tr><td><strong>Update frequency</strong></td><td><code>real_time</code> <code>daily</code> <code>weekly</code> <code>monthly</code> <code>ad_hoc</code></td><td>Dataset, Process (frequency), Metric (reporting frequency)</td></tr>
+        <tr><td><strong>Priority</strong></td><td><code>high</code> <code>medium</code> <code>low</code></td><td>Project, Change Request</td></tr>
+        <tr><td><strong>AI risk tier</strong></td><td><code>unacceptable</code> <code>high</code> <code>limited</code> <code>minimal</code> <code>unassessed</code></td><td>AI Application, AI Agent, AI Model, MCP Server, AI Tool</td></tr>
+        <tr><td><strong>AI approval status</strong></td><td><code>draft</code> <code>under_review</code> <code>approved</code> <code>rejected</code> <code>retired</code></td><td>AI Application, AI Agent, AI Model, Model Endpoint, Knowledge Base, Prompt Template</td></tr>
+        <tr><td><strong>AI source</strong></td><td><code>manual</code> <code>declared</code> <code>discovered</code> <code>runtime</code></td><td>All eight AI facets — see <a href="#scanner">scanner-ready columns</a></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">Risk tier is the anchor</div>
+      <p>The EU AI Act tiers are not decoration. An unacceptable-risk system may not ship; a high-risk
+      one needs documented human oversight, evaluation evidence and a conformity assessment. Every other
+      governance decision about an AI object hangs off this field, which is why it defaults to
+      <code>unassessed</code> rather than to something comfortable.</p>
+    </div>
+
+    <h2 id="data-catalog">Data catalog</h2>
+
+    <p>Eight object types covering systems, the data inside them, the vocabulary that describes it, and
+    the projects, processes, policies and metrics around it.</p>
+
+    <!-- ======================================================== SYSTEM -->
+    <div class="facet-head">
+      <h3 id="f-system">System</h3>
+      <span class="pill data">SYS-nnn</span>
+      <span class="pill muted">parent: optional System</span>
+    </div>
+
+    <p>Anything that holds or moves data. Systems are self-parenting, so a platform can contain its
+    components. Three of the system types exist specifically for AI infrastructure: a vector database is
+    a data platform, not a new asset class, so the ownership, environment and classification machinery
+    already here applies to it unchanged.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>system_type</td><td><code>application</code> <code>database</code> <code>data_warehouse</code> <code>data_lake</code> <code>api</code> <code>file_system</code> <code>cloud_service</code> <code>vector_database</code> <code>ai_platform</code> <code>model_gateway</code></td></tr>
+        <tr><td>environment</td><td><code>production</code> <code>staging</code> <code>development</code> <code>test</code></td></tr>
+        <tr><td>owner</td><td>Business owner, free text</td></tr>
+        <tr><td>technical_contact</td><td>Who to call when it breaks</td></tr>
+        <tr><td>vendor</td><td>Supplier, where it is bought rather than built</td></tr>
+        <tr><td>version</td><td>Free text</td></tr>
+        <tr><td>url</td><td>Console, documentation or landing page</td></tr>
+        <tr><td>data_classification</td><td>The highest class of data the system holds</td></tr>
+        <tr><td>parent_id</td><td>Another System, for platform → component hierarchies</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== DATASET -->
+    <div class="facet-head">
+      <h3 id="f-dataset">Dataset</h3>
+      <span class="pill data">DS-nnn</span>
+      <span class="pill req">parent: System, required</span>
+    </div>
+
+    <p>One addressable body of data inside a system. A dataset cannot exist without a system — the
+    create form will not let you submit one, and the API rejects it.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>system_id <span class="pill req">required</span></td><td>The System this lives in</td></tr>
+        <tr><td>dataset_type</td><td><code>table</code> <code>view</code> <code>file</code> <code>api_endpoint</code> <code>report</code> <code>stream</code></td></tr>
+        <tr><td>schema_name</td><td>Schema, weighted highly in search — people look datasets up this way</td></tr>
+        <tr><td>database_name</td><td>Database, likewise</td></tr>
+        <tr><td>row_count</td><td>Approximate size, whole number</td></tr>
+        <tr><td>data_classification</td><td>The class of data in this dataset</td></tr>
+        <tr><td>update_frequency</td><td><code>real_time</code> <code>daily</code> <code>weekly</code> <code>monthly</code> <code>ad_hoc</code></td></tr>
+        <tr><td>retention_period</td><td>Free text — "7 years", "90 days"</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== ATTRIBUTE -->
+    <div class="facet-head">
+      <h3 id="f-attribute">Attribute</h3>
+      <span class="pill data">ATTR-nnn</span>
+      <span class="pill req">parent: Dataset, required</span>
+    </div>
+
+    <p>A column or field. This is the level at which sensitivity is usually real, and therefore the
+    level the AI catalog's "which agents can reach this?" question is asked at.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>dataset_id <span class="pill req">required</span></td><td>The Dataset this column belongs to</td></tr>
+        <tr><td>data_type</td><td><code>string</code> <code>integer</code> <code>decimal</code> <code>date</code> <code>boolean</code> <code>timestamp</code> <code>text</code></td></tr>
+        <tr><td>length</td><td>Declared length, whole number</td></tr>
+        <tr><td>is_nullable</td><td>Yes / no, default yes</td></tr>
+        <tr><td>is_primary_key</td><td>Yes / no, default no</td></tr>
+        <tr><td>is_business_key</td><td>Yes / no — the key a business user would identify a row by, which is frequently not the primary key</td></tr>
+        <tr><td>default_value</td><td>Free text</td></tr>
+        <tr><td>sample_values</td><td>Illustrative values, searchable</td></tr>
+        <tr><td>data_classification</td><td>The sensitivity of this specific column</td></tr>
+        <tr><td>validation_rules</td><td>Free prose — the constraint as a person would state it</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== GLOSSARY -->
+    <div class="facet-head">
+      <h3 id="f-glossary">Glossary term</h3>
+      <span class="pill data">GL-nnn</span>
+      <span class="pill muted">parent: optional term</span>
+    </div>
+
+    <p>The business vocabulary. Terms are hierarchical in the SKOS sense — a parent term is broader, a
+    child narrower — and they carry synonyms and an abbreviation, which search matches and then
+    <em>explains</em>: a term found through a synonym says so in the result, rather than looking like a
+    bug.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>definition</td><td>The agreed meaning. The point of the record.</td></tr>
+        <tr><td>domain</td><td><code>finance</code> <code>hr</code> <code>marketing</code> <code>operations</code> <code>sales</code> <code>it</code> <code>legal</code> <code>risk</code></td></tr>
+        <tr><td>abbreviation</td><td>Searched at the same weight as the name</td></tr>
+        <tr><td>synonyms</td><td>Other words people use for this. A search that hits here is labelled "synonym: …" in the result</td></tr>
+        <tr><td>related_terms</td><td>Free text; for a navigable link, use a relationship instead</td></tr>
+        <tr><td>example</td><td>A concrete instance</td></tr>
+        <tr><td>usage_guidelines</td><td>When to use the term, and when not to</td></tr>
+        <tr><td>source_of_definition</td><td>Where the definition came from — a regulation, a policy, a committee</td></tr>
+        <tr><td>parent_id</td><td>The broader term</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== PROJECT -->
+    <div class="facet-head">
+      <h3 id="f-project">Project</h3>
+      <span class="pill data">PROJ-nnn</span>
+      <span class="pill muted">parent: optional Project</span>
+    </div>
+
+    <p>A delivery or governance initiative. In the AI catalog a Project also plays the role a dedicated
+    "AI use case" object would: risk and business ownership hang off an object the catalog already has,
+    and an agent records which project it <em>supports</em> as well as which project <em>delivered</em>
+    it.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>project_type</td><td><code>migration</code> <code>integration</code> <code>analytics</code> <code>compliance</code> <code>transformation</code></td></tr>
+        <tr><td>project_status</td><td><code>planned</code> <code>in_progress</code> <code>completed</code> <code>on_hold</code> <code>cancelled</code> — the project's own state, separate from whether the catalog entry is active</td></tr>
+        <tr><td>priority</td><td><code>high</code> <code>medium</code> <code>low</code></td></tr>
+        <tr><td>start_date / end_date</td><td>Dates</td></tr>
+        <tr><td>business_sponsor</td><td>The accountable name</td></tr>
+        <tr><td>parent_id</td><td>A programme this project sits under</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== PROCESS -->
+    <div class="facet-head">
+      <h3 id="f-process">Process</h3>
+      <span class="pill data">PROC-nnn</span>
+      <span class="pill muted">parent: optional Process</span>
+    </div>
+
+    <p>A job that moves or checks data. Decomposition into sub-processes is the parent field; ordering
+    between processes ("triggers", "precedes") is a relationship.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>process_type</td><td><code>etl</code> <code>data_quality</code> <code>transformation</code> <code>validation</code> <code>reporting</code> <code>ingestion</code></td></tr>
+        <tr><td>execution_status</td><td><code>running</code> <code>completed</code> <code>failed</code> <code>scheduled</code> <code>idle</code> — defaults to idle</td></tr>
+        <tr><td>schedule</td><td>Free text or a cron expression</td></tr>
+        <tr><td>frequency</td><td><code>real_time</code> <code>daily</code> <code>weekly</code> <code>monthly</code> <code>ad_hoc</code></td></tr>
+        <tr><td>source_system / target_system</td><td>Free text. For a navigable link, add a "reads from" / "writes to" relationship to the System object</td></tr>
+        <tr><td>sla</td><td>What the job promises</td></tr>
+        <tr><td>parent_id</td><td>The larger process this is a step of</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== POLICY -->
+    <div class="facet-head">
+      <h3 id="f-policy">Policy</h3>
+      <span class="pill data">POL-nnn</span>
+      <span class="pill muted">parent: optional Policy</span>
+    </div>
+
+    <p>What the organisation has decided about its data — and, now, about its AI. Policies are
+    hierarchical because a standard implements a policy and a rule implements a standard. A
+    <em>guardrail</em> is a policy with an enforcement level, not a separate object type, which is why
+    <code>guardrail</code> and <code>ai_ethics</code> are policy types.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>policy_type</td><td><code>regulatory</code> <code>internal</code> <code>privacy</code> <code>security</code> <code>retention</code> <code>quality</code> <code>access</code> <code>guardrail</code> <code>ai_ethics</code></td></tr>
+        <tr><td>policy_status</td><td><code>draft</code> <code>under_review</code> <code>approved</code> <code>published</code> <code>retired</code> — the policy's own approval cycle, defaults to draft</td></tr>
+        <tr><td>enforcement_level</td><td><code>mandatory</code> <code>recommended</code> <code>advisory</code> — whether it must be followed or is guidance</td></tr>
+        <tr><td>regulation</td><td>GDPR, HIPAA, SOX, DPDP, BCBS-239, the EU AI Act …</td></tr>
+        <tr><td>jurisdiction</td><td>EU, US, India, Global …</td></tr>
+        <tr><td>policy_owner / approved_by</td><td>Accountable and approving names</td></tr>
+        <tr><td>effective_date</td><td>When it starts to bite</td></tr>
+        <tr><td>review_date</td><td>When it must be revisited — the field that turns a policy library into a working calendar</td></tr>
+        <tr><td>version</td><td>Free text</td></tr>
+        <tr><td>document_url</td><td>Link to the authoritative document</td></tr>
+        <tr><td>rationale</td><td>Why this policy exists</td></tr>
+        <tr><td>exceptions</td><td>Agreed carve-outs</td></tr>
+        <tr><td>data_classification</td><td>The class of data this policy is about</td></tr>
+        <tr><td>parent_id</td><td>The policy this standard implements, or the standard this rule implements</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== METRIC -->
+    <div class="facet-head">
+      <h3 id="f-metric">Metric</h3>
+      <span class="pill data">MET-nnn</span>
+      <span class="pill muted">parent: optional Metric</span>
+    </div>
+
+    <p>One agreed definition of a measure, so two teams cannot quote the same number differently. This
+    is also how AI evaluation works in DataGovern with no extra object type: an eval score, a benchmark,
+    a latency budget, a cost ceiling and a drift monitor are all Metrics — they have a calculation, a
+    target, warning and critical thresholds and a direction of good — related to the AI object they
+    score.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>calculation</td><td>The formula. The reason a metric catalog exists</td></tr>
+        <tr><td>metric_type</td><td><code>kpi</code> <code>operational</code> <code>data_quality</code> <code>financial</code> <code>compliance</code></td></tr>
+        <tr><td>unit_of_measure</td><td><code>percent</code> <code>count</code> <code>currency</code> <code>days</code> <code>ratio</code></td></tr>
+        <tr><td>aggregation</td><td><code>sum</code> <code>average</code> <code>count</code> <code>distinct_count</code> <code>min</code> <code>max</code> <code>ratio</code></td></tr>
+        <tr><td>grain</td><td><code>daily</code> <code>weekly</code> <code>monthly</code> <code>quarterly</code> <code>yearly</code> — the period one value covers</td></tr>
+        <tr><td>trend_goal</td><td><code>higher_is_better</code> <code>lower_is_better</code> <code>within_range</code> — without this a number cannot be judged</td></tr>
+        <tr><td>target_value</td><td>What good looks like</td></tr>
+        <tr><td>threshold_warning / threshold_critical</td><td>Where to worry, and where to act</td></tr>
+        <tr><td>reporting_frequency</td><td>Reuses the update-frequency set</td></tr>
+        <tr><td>business_owner</td><td>Who owns the number</td></tr>
+        <tr><td>dimensions</td><td>How it can be sliced — region, product, channel</td></tr>
+        <tr><td>parent_id</td><td>A composite metric this one is a component of</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">There is deliberately no "data source" text box on a Metric</div>
+      <p>Where a number comes from is a <em>relationship</em> to the datasets and attributes it is
+      calculated from — something the catalog can actually follow and impact-analyse — rather than a free
+      text field nothing can read.</p>
+    </div>
+
+    <h2 id="ai-catalog">AI catalog</h2>
+
+    <p>Eight object types covering the AI that runs on your data. They are not a separate product bolted
+    on: same detail pages, same change requests, same dual approval, same audit trail, same graph, same
+    export.</p>
+
+    <p>Three modelling decisions shape them, and knowing them makes the field lists read sensibly:</p>
+
+    <ul>
+      <li><strong>Containment is a foreign key; everything else is an edge.</strong> An application
+      contains agents, a model contains endpoints, an MCP server contains tools. Delegation between
+      agents, fine-tuning between models and anything crossing into the data catalog is a relationship.</li>
+      <li><strong>There are no version objects.</strong> Version, resolved version and content hash are
+      columns on a mutable record. The audit trail already answers "what changed when", so immutable
+      version rows would be busywork until a scanner can populate them.</li>
+      <li><strong>Evaluation is a Metric, guardrails are Policies, vector stores are Systems.</strong>
+      Nothing was invented that an existing object type already models.</li>
+    </ul>
+
+    <!-- ======================================================== AI APPLICATION -->
+    <div class="facet-head">
+      <h3 id="f-ai-application">AI Application</h3>
+      <span class="pill ai">APP-nnn</span>
+      <span class="pill muted">parent: optional AI Application</span>
+    </div>
+
+    <p>The deployable unit that contains agents — a repository, a service, a product. This is where
+    business accountability sits, which is why intended purpose, human oversight and risk tier appear
+    here as well as on the agent: a regulator asks about the <em>system</em>, not the function. It is
+    also the unit a future repository scan is scoped to.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>application_type</td><td><code>chatbot</code> <code>copilot</code> <code>rag_app</code> <code>batch_pipeline</code> <code>workflow_automation</code> <code>mcp_host</code> <code>agent_platform</code> <code>other</code></td></tr>
+        <tr><td>deployment_target</td><td><code>kubernetes</code> <code>serverless</code> <code>vm</code> <code>saas</code> <code>local</code> <code>edge</code></td></tr>
+        <tr><td>repository_url</td><td>Where the code lives</td></tr>
+        <tr><td>service_name</td><td>The name it is deployed under</td></tr>
+        <tr><td>language / framework</td><td>Python, TypeScript … / LangGraph, CrewAI, the OpenAI Agents SDK …</td></tr>
+        <tr><td>commit_sha</td><td>The build this record describes</td></tr>
+        <tr><td>environment</td><td>Production, staging, development, test</td></tr>
+        <tr><td>business_owner / technical_owner</td><td>Accountable business and engineering names</td></tr>
+        <tr><td>data_classification</td><td>The highest class of data the application handles</td></tr>
+        <tr><td>risk_tier</td><td>EU AI Act tier — defaults to <code>unassessed</code></td></tr>
+        <tr><td>intended_purpose</td><td><strong>EU AI Act.</strong> What the system is for, in prose</td></tr>
+        <tr><td>human_oversight</td><td><strong>EU AI Act.</strong> Who can intervene, and how</td></tr>
+        <tr><td>approval_status</td><td>Its own sign-off cycle, defaults to <code>draft</code></td></tr>
+        <tr><td>go_live_date / last_review_date</td><td>When it shipped, and when it was last looked at</td></tr>
+        <tr><td>parent_id</td><td>A platform this application sits inside</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== AI AGENT -->
+    <div class="facet-head">
+      <h3 id="f-ai-agent">AI Agent</h3>
+      <span class="pill ai">AGT-nnn</span>
+      <span class="pill muted">parent: optional AI Application</span>
+    </div>
+
+    <p>The hub of the AI catalog — everything else is something an agent uses. Its parent application is
+    <em>optional</em> on purpose: agents are found in code before anyone has registered the application
+    they belong to, and an agent that cannot be recorded until its parent exists is an agent that never
+    gets recorded.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>agent_type</td><td><code>single</code> <code>multi_agent</code> <code>orchestrator</code> <code>sub_agent</code> <code>workflow</code></td></tr>
+        <tr><td>autonomy_level</td><td><code>suggest_only</code> (proposes, a human executes) · <code>human_in_the_loop</code> (each action confirmed) · <code>supervised</code> (acts, a human reviews after) · <code>autonomous</code> (acts unattended). The first thing an auditor asks about</td></tr>
+        <tr><td>acts_on_behalf_of</td><td><code>service_account</code> (standing access of its own — a far larger blast radius) · <code>end_user</code> (scoped to the invoking human) · <code>hybrid</code></td></tr>
+        <tr><td>identity_principal</td><td>The service principal or agent identity its calls carry</td></tr>
+        <tr><td>goal</td><td>What the agent is trying to achieve</td></tr>
+        <tr><td>instructions</td><td>The inline system prompt, for agents whose prompt is not managed as a separate reviewed Prompt Template</td></tr>
+        <tr><td>framework</td><td>langgraph, crewai, openai_agents_sdk …</td></tr>
+        <tr><td>entry_point</td><td><code>module:function</code></td></tr>
+        <tr><td>a2a_card_url</td><td>Agent-to-Agent card, where one is published</td></tr>
+        <tr><td>skills</td><td>Declared A2A skills, comma-separated</td></tr>
+        <tr><td>memory_type</td><td><code>none</code> <code>short_term</code> <code>long_term</code> <code>persistent_vector</code></td></tr>
+        <tr><td>max_iterations</td><td>The loop bound, where one is set</td></tr>
+        <tr><td>agent_owner / sponsor</td><td>The engineer who owns it, and the accountable human</td></tr>
+        <tr><td>version</td><td>Free text</td></tr>
+        <tr><td>environment</td><td>Where this agent runs</td></tr>
+        <tr><td>data_classification</td><td>The highest class of data it is permitted to touch</td></tr>
+        <tr><td>risk_tier / approval_status</td><td>As above</td></tr>
+        <tr><td>application_id</td><td>The AI Application containing it — optional</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note warn">
+      <div class="note-title">Delegation is an edge, not a parent</div>
+      <p>A sub-agent belongs to its application and is <em>used by</em> an orchestrator — often by
+      several. So multi-agent structure is the <code>agent_delegates_to</code> relationship, not the
+      parent field.</p>
+    </div>
+
+    <!-- ======================================================== AI MODEL -->
+    <div class="facet-head">
+      <h3 id="f-ai-model">AI Model</h3>
+      <span class="pill ai">MDL-nnn</span>
+      <span class="pill muted">parent: optional model group</span>
+    </div>
+
+    <p>A set of weights. The parent field is the <em>model group</em> — every build of one model filed
+    under one head — and not the base model a fine-tune derives from, because a base model frequently
+    lives in a registry you do not control. Derivation is the <code>model_fine_tuned_from</code> and
+    <code>model_distilled_from</code> edges.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>provider</td><td><code>openai</code> <code>anthropic</code> <code>google</code> <code>meta</code> <code>mistral</code> <code>cohere</code> <code>aws_bedrock</code> <code>azure_openai</code> <code>huggingface</code> <code>self_hosted</code> <code>other</code></td></tr>
+        <tr><td>model_family</td><td>gpt, claude, gemini, llama …</td></tr>
+        <tr><td>modality</td><td><code>text</code> <code>vision</code> <code>multimodal</code> <code>embedding</code> <code>audio</code> <code>image_generation</code> <code>reranker</code></td></tr>
+        <tr><td>model_kind</td><td><code>foundation</code> <code>fine_tuned</code> <code>adapter</code> (LoRA/QLoRA/prefix) <code>distilled</code> <code>quantized</code></td></tr>
+        <tr><td>version</td><td>The alias as written in code — <code>gpt-4o</code></td></tr>
+        <tr><td>resolved_version</td><td>The pinned build a runtime reports — <code>gpt-4o-2024-08-06</code>. Keeping both is what makes "which model was actually live on date X?" answerable, and it is the most common gap in a hand-kept inventory</td></tr>
+        <tr><td>hosting_type</td><td><code>vendor_api</code> <code>self_hosted</code> <code>on_prem</code> <code>edge</code></td></tr>
+        <tr><td>context_window / max_output_tokens</td><td>Whole numbers</td></tr>
+        <tr><td>parameter_count</td><td>"70B"</td></tr>
+        <tr><td>quantization</td><td>"int4", "fp8"</td></tr>
+        <tr><td>adapter_type</td><td>LoRA, QLoRA, prefix</td></tr>
+        <tr><td>license / vendor</td><td>Licence terms and supplier</td></tr>
+        <tr><td>model_card_url</td><td>Link to the published card</td></tr>
+        <tr><td>intended_use</td><td><strong>Model card triad.</strong> What it is for</td></tr>
+        <tr><td>limitations</td><td><strong>Model card triad.</strong> Where it fails</td></tr>
+        <tr><td>known_bias</td><td><strong>Model card triad.</strong> What it skews. Named under the EU AI Act and NIST AI RMF, and the part of a model card that never survives a spreadsheet</td></tr>
+        <tr><td>training_data_summary</td><td>Prose; the traceable version is the <code>model_trained_on_dataset</code> edge</td></tr>
+        <tr><td>cost_per_1k_input / cost_per_1k_output</td><td>Free text, so currency and units stay visible</td></tr>
+        <tr><td>model_owner</td><td>Accountable name</td></tr>
+        <tr><td>data_classification / risk_tier / approval_status</td><td>As above</td></tr>
+        <tr><td>parent_id</td><td>The model group</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== ENDPOINT -->
+    <div class="facet-head">
+      <h3 id="f-model-endpoint">Model Endpoint</h3>
+      <span class="pill ai">EP-nnn</span>
+      <span class="pill req">parent: AI Model, required</span>
+    </div>
+
+    <p>Where a model is actually served. A model and an endpoint are different objects because vLLM is
+    not a model type — it is an inference server. The same weights served through Azure in the EU and
+    through a vendor API in the US are <em>one model and two endpoints</em>, and every question a
+    governance team asks about that pair — residency, retention, auth, which data classes may cross it —
+    is answered at the endpoint. A multi-model gateway is one row per route, which is also more accurate,
+    because residency and auth are per route.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>model_id <span class="pill req">required</span></td><td>The model behind this route. An endpoint with no model is not a thing</td></tr>
+        <tr><td>serving_engine</td><td><code>vllm</code> <code>ollama</code> <code>tgi</code> <code>triton</code> <code>sagemaker</code> <code>bedrock</code> <code>vertex</code> <code>azure_openai</code> <code>openai_api</code> <code>anthropic_api</code> <code>litellm_gateway</code> <code>other</code></td></tr>
+        <tr><td>protocol</td><td><code>https_rest</code> <code>openai_compatible</code> <code>grpc</code> <code>mcp</code> <code>a2a</code> <code>websocket</code></td></tr>
+        <tr><td>auth_type</td><td><code>api_key</code> <code>oauth2</code> <code>iam_role</code> <code>mtls</code> <code>none</code></td></tr>
+        <tr><td>endpoint_url</td><td>The route itself</td></tr>
+        <tr><td>region</td><td>Deployment region</td></tr>
+        <tr><td>data_residency</td><td>Where prompts physically go. The vendor-review question</td></tr>
+        <tr><td>approved_data_classification</td><td>The highest class of data allowed through this route — compare it against what the agents using it actually touch</td></tr>
+        <tr><td>prompt_retention_days</td><td>Does the provider keep the prompts, and for how long? Asked in every vendor review and recorded in almost no inventory</td></tr>
+        <tr><td>logging_enabled</td><td>Yes / no</td></tr>
+        <tr><td>is_public_internet</td><td>Yes / no — reachable from outside</td></tr>
+        <tr><td>rate_limit_rpm / rate_limit_tpm</td><td>Requests and tokens per minute</td></tr>
+        <tr><td>traffic_split_percent</td><td>For canary and A/B routes</td></tr>
+        <tr><td>availability_sla</td><td>Free text</td></tr>
+        <tr><td>environment</td><td>Where this route lives</td></tr>
+        <tr><td>endpoint_owner</td><td>Accountable name</td></tr>
+        <tr><td>approval_status</td><td>Its own sign-off cycle</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- ======================================================== KB -->
+    <div class="facet-head">
+      <h3 id="f-knowledge-base">Knowledge Base</h3>
+      <span class="pill ai">KB-nnn</span>
+      <span class="pill muted">parent: optional Knowledge Base</span>
+    </div>
+
+    <p>A retrieval index — the hinge the whole AI catalog turns on.
+    <code>Dataset → indexes → Knowledge Base → retrieved by → Agent</code> is the path that makes "which
+    agents can read PII?" answerable, and it is why a knowledge base is an object rather than a field on
+    an agent: the same index is retrieved from by many agents, and a classification change has to reach
+    all of them.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>kb_type</td><td><code>vector_index</code> <code>graph_index</code> <code>keyword_index</code> <code>hybrid</code> <code>document_collection</code> <code>feature_store</code></td></tr>
+        <tr><td>vector_store</td><td><code>pgvector</code> <code>qdrant</code> <code>pinecone</code> <code>weaviate</code> <code>chroma</code> <code>milvus</code> <code>opensearch</code> <code>elasticsearch</code> <code>faiss</code> <code>azure_ai_search</code> <code>other</code></td></tr>
+        <tr><td>collection_name</td><td>The index or collection, searched at name weight</td></tr>
+        <tr><td>embedding_dimension</td><td>Whole number</td></tr>
+        <tr><td>distance_metric</td><td><code>cosine</code> <code>dot_product</code> <code>euclidean</code></td></tr>
+        <tr><td>chunk_strategy</td><td><code>fixed</code> <code>recursive</code> <code>semantic</code> <code>sentence</code> <code>markdown_header</code> <code>code_aware</code></td></tr>
+        <tr><td>chunk_size / chunk_overlap</td><td>Whole numbers</td></tr>
+        <tr><td>retrieval_top_k</td><td>How many chunks come back</td></tr>
+        <tr><td>retrieval_filters</td><td>Any filter applied at query time</td></tr>
+        <tr><td>reranker</td><td>Free text; the traceable version is the <code>kb_reranked_by</code> edge to an AI Model</td></tr>
+        <tr><td>document_count</td><td>Whole number</td></tr>
+        <tr><td>last_indexed_at</td><td>When it was last rebuilt</td></tr>
+        <tr><td>refresh_schedule</td><td>Cron expression</td></tr>
+        <tr><td>contains_pii</td><td>Yes / no — the flag that propagates outward through retrieval</td></tr>
+        <tr><td>data_classification / retention_period</td><td>Sensitivity and how long content is kept</td></tr>
+        <tr><td>kb_owner</td><td>Accountable name</td></tr>
+        <tr><td>approval_status</td><td>Its own sign-off cycle</td></tr>
+        <tr><td>parent_id</td><td>A knowledge base this one is derived from structurally</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">Two things about a knowledge base are edges, not fields</div>
+      <p>The <strong>embedding model</strong> is <code>kb_embedded_with</code> to an AI Model, because an
+      embedding model has its own licence and approval and re-embedding with a different one is a
+      governance event. The <strong>vector store</strong> is <code>kb_stored_in_system</code> to a System
+      with <code>system_type = vector_database</code>, because a vector database is a data platform, not
+      a new asset class.</p>
+    </div>
+
+    <!-- ======================================================== MCP -->
+    <div class="facet-head">
+      <h3 id="f-mcp-server">MCP Server</h3>
+      <span class="pill ai">MCP-nnn</span>
+      <span class="pill muted">parent: optional MCP gateway</span>
+    </div>
+
+    <p>A Model Context Protocol server — a provider of tools, not an endpoint. Its tools read and write
+    real tables, so lineage runs <em>through</em> it back into the data catalog rather than stopping at
+    it. That is why AI Tool is its own object type and not a blob of JSON here.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>trust_status</td><td><code>approved</code> <code>under_review</code> <code>quarantined</code> <code>blocked</code> <code>unknown</code> — everything else on this object is description; this is the control. A newly discovered server belongs in <code>quarantined</code></td></tr>
+        <tr><td>server_name</td><td>The reverse-DNS name from the registry's <code>server.json</code> — <code>io.github.acme/orders-mcp</code>. Indexed, and searched at name weight: people quote it the way they quote a reference number</td></tr>
+        <tr><td>title</td><td>Human-facing name</td></tr>
+        <tr><td>transport</td><td><code>stdio</code> <code>streamable_http</code> <code>sse</code> <code>websocket</code></td></tr>
+        <tr><td>registry_type</td><td><code>npm</code> <code>pypi</code> <code>oci</code> <code>nuget</code> <code>mcpb</code> <code>remote</code> <code>local</code></td></tr>
+        <tr><td>scope</td><td><code>internal</code> <code>third_party</code> <code>community</code> <code>vendor</code></td></tr>
+        <tr><td>auth_type</td><td><code>none</code> <code>api_key</code> <code>oauth2</code> <code>bearer</code> <code>mtls</code></td></tr>
+        <tr><td>package_identifier</td><td>The package it is installed from</td></tr>
+        <tr><td>launch_command</td><td>How it is started. <span class="pill warn">never exported</span></td></tr>
+        <tr><td>required_env_vars</td><td>Variable <strong>names only</strong>, never values. <span class="pill warn">never exported</span></td></tr>
+        <tr><td>remote_url / repository_url / website_url</td><td>Where it runs, where its code is, where it is documented</td></tr>
+        <tr><td>publisher / vendor / server_owner</td><td>Who publishes it, who supplies it, who owns it here</td></tr>
+        <tr><td>is_public</td><td>Yes / no</td></tr>
+        <tr><td>host_environment</td><td>Where this instance runs</td></tr>
+        <tr><td>version</td><td>Free text</td></tr>
+        <tr><td>last_introspected_at / tool_count</td><td>When its tool list was last read, and how many it advertised</td></tr>
+        <tr><td>data_classification / risk_tier</td><td>As above</td></tr>
+        <tr><td>parent_id</td><td>An MCP gateway fronting several servers</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note danger">
+      <div class="note-title">Two fields are excluded from every export</div>
+      <p><code>launch_command</code> and <code>required_env_vars</code> never appear in the Excel
+      workbook. Both attract pasted secrets however clearly the field is labelled "names only", and an
+      export is a file that leaves the platform. Neither is information anyone exports a catalog to get,
+      so excluding them costs nothing.</p>
+    </div>
+
+    <!-- ======================================================== TOOL -->
+    <div class="facet-head">
+      <h3 id="f-ai-tool">AI Tool</h3>
+      <span class="pill ai">TOOL-nnn</span>
+      <span class="pill muted">parent: optional MCP Server</span>
+    </div>
+
+    <p>What an agent actually binds to, and where data access happens. The MCP server is optional because
+    plenty of tools are not MCP tools at all — a LangChain <code>@tool</code>, a REST call, a SQL
+    function.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>tool_kind</td><td><code>mcp_tool</code> <code>mcp_resource</code> <code>mcp_prompt</code> <code>local_function</code> <code>rest_api</code> <code>sql_query</code> <code>retriever</code> <code>code_interpreter</code> <code>builtin</code></td></tr>
+        <tr><td>access_mode</td><td><code>read</code> <code>write</code> <code>read_write</code> <code>execute</code></td></tr>
+        <tr><td>read_only_hint</td><td><strong>MCP annotation, verbatim.</strong> The tool does not modify anything</td></tr>
+        <tr><td>destructive_hint</td><td><strong>MCP annotation.</strong> The tool can destroy data</td></tr>
+        <tr><td>idempotent_hint</td><td><strong>MCP annotation.</strong> Calling it twice is the same as once</td></tr>
+        <tr><td>open_world_hint</td><td><strong>MCP annotation.</strong> It reaches things outside a closed, known set</td></tr>
+        <tr><td>requires_consent / requires_approval</td><td>Whether a human must agree before it runs</td></tr>
+        <tr><td>auth_required</td><td>Yes / no</td></tr>
+        <tr><td>input_schema / output_schema</td><td>JSON Schema, as declared</td></tr>
+        <tr><td>side_effects</td><td>What happens in the world when this runs, in prose</td></tr>
+        <tr><td>target_endpoint</td><td>The API URL or function path it calls</td></tr>
+        <tr><td>rate_limit</td><td>Free text</td></tr>
+        <tr><td>contains_pii</td><td>Yes / no</td></tr>
+        <tr><td>data_classification / risk_tier</td><td>As above</td></tr>
+        <tr><td>tool_owner</td><td>Accountable name</td></tr>
+        <tr><td>source_file / source_symbol</td><td>Where the tool is defined — evidence a future scan would fill</td></tr>
+        <tr><td>mcp_server_id</td><td>The MCP server publishing it — optional</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note warn">
+      <div class="note-title">The four hints are the cheapest risk signal you have</div>
+      <p>They are the MCP protocol's own annotations, taken as they come rather than re-invented as a
+      risk scale — which means the server declares them, so they cost nothing to collect. A
+      <em>destructive</em>, <em>non-idempotent</em>, <em>open-world</em> tool bound to an
+      <em>autonomous</em> agent is the shape of an incident, and all five of those facts are in the
+      catalog.</p>
+    </div>
+
+    <!-- ======================================================== PROMPT -->
+    <div class="facet-head">
+      <h3 id="f-prompt-template">Prompt Template</h3>
+      <span class="pill ai">PT-nnn</span>
+      <span class="pill muted">parent: optional Prompt Template</span>
+    </div>
+
+    <p>A versioned, reviewable prompt. Split out of the agent because a prompt is reviewed, approved and
+    reused independently of any one agent — and because an agent's behaviour changing without its code
+    changing is exactly the event a governance log should show.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>prompt_role</td><td><code>system</code> <code>user</code> <code>assistant</code> <code>developer</code> <code>tool_result</code> <code>guardrail</code></td></tr>
+        <tr><td>template_text</td><td>The prompt itself, searchable as prose</td></tr>
+        <tr><td>content_hash</td><td>SHA-256 of the text. Recorded before and after every edit, so "which prompt was live on date X?" is answerable from the audit trail alone, with no version table</td></tr>
+        <tr><td>variables</td><td>The placeholders it expects, comma-separated</td></tr>
+        <tr><td>examples</td><td>Worked examples</td></tr>
+        <tr><td>version / language</td><td>Free text</td></tr>
+        <tr><td>token_estimate</td><td>Whole number</td></tr>
+        <tr><td>contains_pii / contains_secrets</td><td>Yes / no — a prompt with either is a finding</td></tr>
+        <tr><td>reviewed_by / reviewed_date</td><td>Who signed the wording off, and when</td></tr>
+        <tr><td>eval_metrics / eval_score</td><td>Free text; the traceable version is a Metric related to this prompt</td></tr>
+        <tr><td>source_file / source_line</td><td>Where it is defined in code</td></tr>
+        <tr><td>prompt_owner</td><td>Accountable name</td></tr>
+        <tr><td>approval_status</td><td>Its own sign-off cycle</td></tr>
+        <tr><td>parent_id</td><td>A prompt this one is composed from</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="scanner">Scanner-ready columns</h3>
+
+    <p>All eight AI object types carry six extra columns that are inert today. Everything is entered by
+    hand in Phase 1, so <code>source</code> is <code>manual</code> and the rest are empty. They exist now
+    because a future repository scanner upserts on a deterministic identifier, and adding six columns to
+    eight tables later — with no migration tool — is the expensive path.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>external_id</td><td>The deterministic identifier a rescan matches on — <code>urn:ai:tool:{repo}:{path}:{symbol}</code></td></tr>
+        <tr><td>source</td><td><code>manual</code> · <code>declared</code> (a committed manifest) · <code>discovered</code> (parsed from code) · <code>runtime</code> (seen in a trace). Precedence on conflict runs declared &gt; discovered &gt; runtime; <code>manual</code> is a human entry and is never overwritten by a scan</td></tr>
+        <tr><td>confidence</td><td>0–100, how certain the static analysis was</td></tr>
+        <tr><td>first_seen / last_seen</td><td>When a scan first and last saw this thing</td></tr>
+        <tr><td>scan_run_id</td><td>Which run produced the record</td></tr>
+        <tr><td>custom_properties</td><td>JSON for anything the model has no column for</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="relationships">Relationships</h2>
+
+    <p>A relationship is a directed, typed edge between two catalog objects. It is stored once and read
+    from whichever object you are looking at, so the same edge reads as <em>"derived from"</em> on one
+    page and <em>"source for"</em> on the other.</p>
+
+    <h3 id="rel-anatomy">Anatomy of a relationship type</h3>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Part</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>code</td><td>The stable identifier — <code>dataset_derived_from</code></td></tr>
+        <tr><td>forward_label</td><td>How it reads from source to target — "Derived from"</td></tr>
+        <tr><td>inverse_label</td><td>How it reads back — "Source for"</td></tr>
+        <tr><td>source_facet / target_facet</td><td>Which object type may sit at each end. Enforced on write: you cannot point a dataset edge at a policy</td></tr>
+        <tr><td>is_symmetric</td><td>True when it reads the same both ways ("Joins to", "Same as"). One row, direction resolved at read time</td></tr>
+        <tr><td>is_system</td><td>True for the seeded catalogue. Seeded types may be relabelled but never deleted, because edges point at them</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Direction follows one convention throughout: the <em>active</em> object is the source, so an edge
+    reads as a sentence with the subject first — "KB-001 indexes DS-004", "POL-002 governs AGT-001".</p>
+
+    <h3 id="rel-rules">Rules enforced on every edge</h3>
+
+    <ul>
+      <li>The relationship type must exist, and the two facets must match the type's declared ends.</li>
+      <li>An object cannot relate to itself.</li>
+      <li>The same edge cannot be recorded twice; for a symmetric type, the mirror image is the same
+      edge and is also refused.</li>
+      <li>Both endpoints must exist at the moment the edge is written — and again when an approved
+      request is applied, because the world may have moved while the request waited.</li>
+      <li>An edge whose far endpoint has since been deleted is skipped on read rather than rendered as a
+      broken link.</li>
+    </ul>
+
+    <h3 id="rel-states">Edge states</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>active</code> <span class="pill ok">live</span></td><td>The relationship exists.</td></tr>
+        <tr><td><code>pending_create</code> <span class="pill warn">waiting</span></td><td>Requested but not yet approved. The row is written immediately and shows, dimmed, on <em>both</em> objects — so the steward on the far side sees a relationship coming rather than finding it already there.</td></tr>
+        <tr><td><code>pending_delete</code> <span class="pill warn">waiting</span></td><td>A removal has been requested. The edge is still live until the request is approved.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Each edge also records its provenance: the change request that authorised it, or nothing at all
+    if an administrator created it directly. The Relationships tab shows the difference — a purple
+    change-request chip, or a plain "Direct" chip with the creator's name on hover.</p>
+
+    <h3 id="rel-catalogue">The relationship catalogue — all 141 types</h3>
+
+    <p>Seeded on startup, additively: a type you relabel keeps your wording across restarts. Grouped
+    here by what they connect.</p>
+
+    <h4>Within the data catalog</h4>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Between</th><th>Reads as (forward / inverse)</th></tr></thead>
+      <tbody>
+        <tr><td>Dataset → Dataset</td><td>Derived from / Source for · Replica of / Has replica · Aggregates / Aggregated into · Joins to <span class="pill muted">symmetric</span> · Supersedes / Superseded by · Same as <span class="pill muted">symmetric</span></td></tr>
+        <tr><td>Attribute → Attribute</td><td>Derived from / Source for · Foreign key to / Referenced by · Calculated from / Used in calculation · Same as <span class="pill muted">symmetric</span></td></tr>
+        <tr><td>System → System</td><td>Integrates with <span class="pill muted">symmetric</span> · Depends on / Used by · Hosts / Hosted on · Replaces / Replaced by</td></tr>
+        <tr><td>System → Dataset</td><td>Is system of record for / Has system of record · Is system of reference for / Has system of reference · Is system of use for / Has system of use</td></tr>
+        <tr><td>Process → Dataset</td><td>Consumes / Consumed by · Produces / Produced by · Updates / Updated by · Validates / Validated by</td></tr>
+        <tr><td>Process → Attribute</td><td>Consumes / Consumed by · Produces / Produced by</td></tr>
+        <tr><td>Process → System</td><td>Reads from / Read by · Writes to / Written by · Runs on / Runs</td></tr>
+        <tr><td>Process → Process</td><td>Triggers / Triggered by · Precedes / Follows</td></tr>
+        <tr><td>Project → *</td><td>Delivers / Delivered by (System, Dataset, Process) · Impacts / Impacted by (System, Dataset) · Migrates / Migrated by (System) · Uses term / Used by (Glossary)</td></tr>
+        <tr><td>Glossary → Glossary</td><td>Synonym of <span class="pill muted">symmetric</span> · Is acronym for / Has acronym · Related to <span class="pill muted">symmetric</span> · Replaces / Replaced by</td></tr>
+        <tr><td>Glossary → physical</td><td>Represents / Represented by (System, Dataset, Attribute, Process) · Governs / Governed by (Dataset) · Classifies / Classified by (Attribute)</td></tr>
+        <tr><td>Policy → *</td><td>Governs / Governed by (System, Dataset, Attribute, Glossary, Process, Project) · Is implemented by / Implements (Process) · Is measured by / Measures (Metric)</td></tr>
+        <tr><td>Policy → Policy</td><td>Supersedes / Superseded by · Derived from / Basis for</td></tr>
+        <tr><td>Metric → *</td><td>Calculated from / Used in (Dataset, Attribute) · Measures / Measured by (Process, System) · Supports / Supported by (Project) · Defined by / Defines (Glossary)</td></tr>
+        <tr><td>Metric → Metric</td><td>Derived from / Component of · Same as <span class="pill muted">symmetric</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h4>Within the AI catalog</h4>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Between</th><th>Reads as (forward / inverse)</th></tr></thead>
+      <tbody>
+        <tr><td>Agent → AI</td><td>Uses model / Used by agent · Invokes / Invoked by (Endpoint) · Uses tool / Used by agent · Uses MCP server / Used by agent · Retrieves from / Retrieved by (Knowledge Base) · Has prompt / Used by agent</td></tr>
+        <tr><td>Agent → Agent</td><td>Delegates to / Delegated to by · Supersedes / Superseded by</td></tr>
+        <tr><td>Application → AI</td><td>Uses MCP server / Used by · Depends on / Used by (Application) · Supersedes / Superseded by</td></tr>
+        <tr><td>Model → Model</td><td>Fine-tuned from / Base model for · Distilled from / Distilled into · Supersedes / Superseded by · Same as <span class="pill muted">symmetric</span></td></tr>
+        <tr><td>Knowledge Base → AI</td><td>Embedded with / Embedding model for (Model) · Reranked by / Reranks (Model) · Derived from / Source for (Knowledge Base)</td></tr>
+        <tr><td>MCP &amp; Tool</td><td>Replaces / Replaced by (MCP → MCP) · Wraps / Wrapped by (Tool → Tool) · Queries / Queried by (Tool → Knowledge Base)</td></tr>
+        <tr><td>Prompt → Prompt</td><td>Includes / Included in · Supersedes / Superseded by</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h4>AI catalog → data catalog <span class="pill ai">the point of the whole thing</span></h4>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Between</th><th>Reads as (forward / inverse)</th></tr></thead>
+      <tbody>
+        <tr><td>Knowledge Base → data</td><td>Indexes / Indexed into (Dataset, Attribute) · Sourced from / Source for (System) · Stored in / Stores (System) · Refreshed by / Refreshes (Process)</td></tr>
+        <tr><td>Tool → data</td><td>Reads from / Read by (Dataset, Attribute) · Writes to / Written by (Dataset, Attribute) · Calls / Called by (System) · Triggers / Triggered by (Process)</td></tr>
+        <tr><td>Agent → data</td><td>Reads / Read by (Dataset) · Writes / Written by (Dataset) · Runs on / Hosts (System) · Automates / Automated by (Process) · Supports / Supported by (Project)</td></tr>
+        <tr><td>Model → data</td><td>Trained on / Training data for · Fine-tuned on / Fine-tuning data for · Evaluated on / Evaluation data for (all Dataset)</td></tr>
+        <tr><td>Endpoint, MCP, Application → data</td><td>Hosted on / Hosts (System) · Accesses / Accessed by (System) · Runs on / Hosts (System) · Consumes / Consumed by (Dataset) · Automates / Automated by (Process) · Supports / Supported by (Project)</td></tr>
+        <tr><td>Prompt → data</td><td>References / Referenced by (Dataset) · References term / Referenced by (Glossary) — a prompt naming a table or a business term depends on it, and renaming either silently changes what the agent does</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h4>Data catalog → AI catalog</h4>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Between</th><th>Reads as (forward / inverse)</th></tr></thead>
+      <tbody>
+        <tr><td>Project → AI</td><td>Delivers / Delivered by (Application, Agent) · Impacts / Impacted by (Application)</td></tr>
+        <tr><td>Process → AI</td><td>Invokes / Invoked by (Agent) — a scheduled pipeline calling an agent as a step, the opposite of an agent replacing the process</td></tr>
+        <tr><td>Glossary → AI</td><td>Defines / Defined by — Application, Agent, Model, Knowledge Base, Tool, Prompt Template. Deliberately not extended to MCP servers or endpoints, which are infrastructure and carry no business meaning to define</td></tr>
+        <tr><td>Policy → AI</td><td>Governs / Governed by — <strong>all eight</strong> AI object types. Plus Is implemented by / Implements (Agent)</td></tr>
+        <tr><td>Metric → AI</td><td>Measures / Measured by — <strong>all eight</strong> AI object types. This is how evaluations, benchmarks, cost, latency and drift monitors are modelled with no new object type</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="hierarchy">Hierarchy — related, but not a relationship</h3>
+
+    <p>Some parentage is mandatory structure rather than an optional link, and is held as a foreign key.
+    It appears on the Relationships tab under a clearly-marked <em>Hierarchy</em> heading, read-only,
+    and is never raised as a change request — you change it by editing the object.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Child</th><th>Parent</th><th>Shape</th></tr></thead>
+      <tbody>
+        <tr><td>Dataset</td><td>System <span class="pill req">required</span></td><td>Cross-type containment</td></tr>
+        <tr><td>Attribute</td><td>Dataset <span class="pill req">required</span></td><td>Cross-type containment</td></tr>
+        <tr><td>AI Agent</td><td>AI Application</td><td>Cross-type containment</td></tr>
+        <tr><td>Model Endpoint</td><td>AI Model <span class="pill req">required</span></td><td>Cross-type containment</td></tr>
+        <tr><td>AI Tool</td><td>MCP Server</td><td>Cross-type containment</td></tr>
+        <tr><td>System, Glossary, Project, Process, Policy, Metric, AI Application, AI Model, Knowledge Base, MCP Server, Prompt Template</td><td>Another object of the same type</td><td>Self-parenting tree</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="graph">The relationship graph</h2>
+
+    <p>Every object's Relationships tab has a List / Graph toggle. The graph draws the neighbourhood
+    around the object you are on, and the Cytoscape bundle it needs is loaded only when you open it — so
+    people who never use it never download it.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Control or behaviour</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Depth</strong></td><td>1, 2 or 3 degrees of separation from the focused object. Each level is one indexed query, so a depth-3 walk is three round trips.</td></tr>
+        <tr><td><strong>Show hierarchy</strong></td><td>On by default. Draws each node inside its containment parent's box — datasets nested in their system, endpoints in their model. The single biggest readability win at a hundred nodes.</td></tr>
+        <tr><td><strong>Colour</strong></td><td>One colour per object type, carried through node fill, border and the legend.</td></tr>
+        <tr><td><strong>Shape</strong></td><td>Data-catalog and AI-catalog nodes have different shapes, so the two halves separate at a glance without reading a single label.</td></tr>
+        <tr><td><strong>Border</strong></td><td>Reflects lifecycle status.</td></tr>
+        <tr><td><strong>Edge labels</strong></td><td>Appear once you zoom past a threshold, and on hover — otherwise a dense graph is unreadable.</td></tr>
+        <tr><td><strong>Hover</strong></td><td>Dims everything except the hovered node's neighbourhood, its ancestors and its descendants.</td></tr>
+        <tr><td><strong>Click</strong></td><td>Navigates to that object's detail page.</td></tr>
+        <tr><td><strong>Pending edges</strong></td><td>Drawn distinctly, so a relationship awaiting approval is visible but not mistaken for a live one.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="graph-caps">Honest truncation</h3>
+
+    <p>Three caps keep both the query and the picture bounded, and the view says when one has bitten
+    rather than quietly returning a subset.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Cap</th><th>Value</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Maximum depth</td><td>3</td><td>Degrees of separation is the cheapest way to bound a traversal.</td></tr>
+        <tr><td>Maximum nodes</td><td>250 (default request 150)</td><td>Beyond this the response is marked <code>truncated</code> and the view says so.</td></tr>
+        <tr><td>Children drawn per box</td><td>12</td><td>A box holding 150 unconnected nodes is a list, not a graph. The rest are summarised as "+N more".</td></tr>
+        <tr><td>Neighbours per type, per direction, per node</td><td>12</td><td>A dataset that 160 others derive from would otherwise be a 3,000-pixel column. "148 more" tells a reader more than 148 identical dots.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>The focused object's own children are always drawn, even when no relationship edge reaches them —
+    otherwise a system with twenty datasets and no relationships would render as a single dot while its
+    list view shows twenty rows.</p>
+
+    <h2 id="search">Search</h2>
+
+    <p>One box searches every object type plus people, on the dashboard. Typing gives suggestions after two
+    characters, debounced, with in-flight requests cancelled so a slow early response can never overwrite a
+    fast later one.</p>
+
+    <h3 id="search-signals">How a result is ranked</h3>
+
+    <p>Five independent signals, each answering a different question, combined into one score:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Signal</th><th>Question it answers</th><th>Weight</th></tr></thead>
+      <tbody>
+        <tr><td>Full-text rank</td><td>Does the text match, and <em>where</em>?</td><td>× 4.0</td></tr>
+        <tr><td>Trigram similarity on the name</td><td>Is it close even with a typo?</td><td>× 2.0</td></tr>
+        <tr><td>Exact reference-number match</td><td>Did they paste <code>DS-001</code>?</td><td>+ 100</td></tr>
+        <tr><td>Name prefix match</td><td>Did they start typing the name?</td><td>+ 1.5</td></tr>
+        <tr><td>Click count</td><td>Do people actually open this one?</td><td>+ ln(1 + clicks) × 0.5</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Full text alone misses typos; trigram alone has no sense of which field matters. Ranking on both
+    and then boosting by real usage is what makes the top result usually the right one.</p>
+
+    <h4>Field weighting</h4>
+
+    <p>Within full-text ranking, each object type declares which of its columns matter most. The scheme
+    is the same everywhere, and a hit in an A column outranks one in a D column by roughly ten to one.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Weight</th><th>Meaning</th><th>Typical columns</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A</strong></td><td>Identity</td><td>name, reference number, glossary abbreviation, MCP server name, KB collection name</td></tr>
+        <tr><td><strong>B</strong></td><td>Distinguishing attributes</td><td>owner, vendor, schema, synonyms, framework, region, model family, agent sponsor</td></tr>
+        <tr><td><strong>C</strong></td><td>Prose</td><td>description, definition, goal, instructions, intended purpose, template text</td></tr>
+        <tr><td><strong>D</strong></td><td>Long tail</td><td>URLs, SLAs, schedules, examples, schemas, source file paths</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h4>Values full text cannot reach</h4>
+
+    <p>PostgreSQL will not allow an enum cast inside a generated full-text column, so a search for
+    <code>qdrant</code>, <code>quarantined</code> or <code>autonomous</code> could never hit the index
+    however obviously a person would type it. Those columns are matched as plain substrings at query
+    time instead — the same answer already used for email addresses, which full text treats as one
+    atomic token. In practice: searching an enum value works, for every AI object type.</p>
+
+    <h3 id="search-filters">Query filters</h3>
+
+    <p>Two tokens turn one box into a precise one. Anything that looks like a filter but names something
+    unknown is reported back rather than searched for literally.</p>
+
+<pre><code>type:dataset customer      only datasets, matching "customer"
+in:agents pricing          same thing — "type", "facet" and "in" are interchangeable
+status:active invoice      only active objects
+type:mcp status:active     a filter with no search text is fine
+</code></pre>
+
+    <p>Type names accept the words people actually use, not just the slug:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Resolves to</th><th>Accepted as</th></tr></thead>
+      <tbody>
+        <tr><td>Systems</td><td><code>system</code> <code>systems</code></td></tr>
+        <tr><td>Datasets</td><td><code>dataset</code> <code>datasets</code> <code>table</code></td></tr>
+        <tr><td>Attributes</td><td><code>attribute</code> <code>attributes</code> <code>column</code> <code>columns</code> <code>field</code></td></tr>
+        <tr><td>Glossary</td><td><code>glossary</code> <code>glossaries</code> <code>term</code> <code>terms</code></td></tr>
+        <tr><td>Projects</td><td><code>project</code> <code>projects</code></td></tr>
+        <tr><td>Processes</td><td><code>process</code> <code>processes</code></td></tr>
+        <tr><td>Policies</td><td><code>policy</code> <code>policies</code> <code>standard</code> <code>standards</code> <code>rule</code> <code>rules</code></td></tr>
+        <tr><td>Metrics</td><td><code>metric</code> <code>metrics</code> <code>kpi</code> <code>kpis</code> <code>measure</code> <code>measures</code></td></tr>
+        <tr><td>AI Applications</td><td><code>app</code> <code>apps</code> <code>ai-app</code> <code>application</code> <code>applications</code> <code>ai-application</code></td></tr>
+        <tr><td>AI Agents</td><td><code>agent</code> <code>agents</code> <code>ai-agent</code> <code>bot</code> <code>bots</code> <code>copilot</code></td></tr>
+        <tr><td>AI Models</td><td><code>model</code> <code>models</code> <code>llm</code> <code>llms</code> <code>embedding</code></td></tr>
+        <tr><td>Model Endpoints</td><td><code>endpoint</code> <code>endpoints</code> <code>deployment</code> <code>deployments</code></td></tr>
+        <tr><td>Knowledge Bases</td><td><code>kb</code> <code>kbs</code> <code>knowledge-base</code> <code>rag</code> <code>index</code> <code>vectorstore</code></td></tr>
+        <tr><td>MCP Servers</td><td><code>mcp</code> <code>mcps</code> <code>mcp-server</code> <code>server</code> <code>servers</code></td></tr>
+        <tr><td>AI Tools</td><td><code>tool</code> <code>tools</code> <code>function</code> <code>functions</code></td></tr>
+        <tr><td>Prompt Templates</td><td><code>prompt</code> <code>prompts</code> <code>template</code> <code>prompt-template</code></td></tr>
+        <tr><td>Change Requests</td><td><code>cr</code> <code>crs</code> <code>change-request</code> <code>changerequest</code></td></tr>
+        <tr><td>People</td><td><code>person</code> <code>people</code> <code>user</code> <code>users</code> <code>steward</code> <code>stewards</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p><code>status:</code> accepts <code>active</code>, <code>inactive</code>, <code>obsolete</code> and
+    the change-request states <code>submitted</code>, <code>under_review</code>, <code>approved</code>,
+    <code>rejected</code>, <code>implemented</code>.</p>
+
+    <h3 id="search-results">On the results page</h3>
+
+    <ul>
+      <li><strong>Per-type chips with counts</strong> — filter to one type without retyping. The chip is
+      the same query you could have typed, so one code path serves both.</li>
+      <li><strong>Reference chip and status chip</strong> on every hit; people get a purple "person"
+      chip instead of a reference number.</li>
+      <li><strong>A context subtitle</strong> per type — the one extra fact that tells two
+      similarly-named objects apart. A system shows its type, a dataset its schema, a knowledge base its
+      vector store, an MCP server its trust status, an agent its type or framework.</li>
+      <li><strong>"Matched on"</strong> — when a glossary term was found through a synonym, abbreviation
+      or related term, the result says which, so it does not look like a bug.</li>
+      <li><strong>Fuzzy-fallback notice</strong> — when nothing matched on words or reference number and
+      everything shown came from similarity, the page says so rather than pretending.</li>
+      <li><strong>Unknown-filter warning</strong> — <code>type:widgets</code> produces a warning naming
+      the token, not a silent literal search.</li>
+      <li><strong>Click logging</strong> — opening a result is recorded, which is what feeds the usage
+      boost. Logging never blocks navigation.</li>
+    </ul>
+
+    <h2 id="export">Excel export</h2>
+
+    <p>Any search exports with one click. The workbook contains the <strong>whole</strong> result set,
+    not the page you are looking at, and it runs the same query the results page ran, so the two can
+    never disagree about what matched.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Behaviour</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>One sheet per type</td><td>A search returning 2 datasets, 1 attribute and 3 systems produces three sheets, not one flat list. Sheet order is stable.</td></tr>
+        <tr><td>Every column</td><td>All of the object's stored columns, not just what the results page displayed.</td></tr>
+        <tr><td>Mandatory headers in red</td><td>Read straight off the database's NOT NULL constraints, so the workbook can never disagree with the schema about what is required.</td></tr>
+        <tr><td>Relevance order preserved</td><td>Rows keep the search's ranking, not database order.</td></tr>
+        <tr><td>People, not ids</td><td><code>created_by</code>, <code>updated_by</code>, <code>requested_by</code> and <code>reviewed_by</code> are resolved to names.</td></tr>
+        <tr><td>Usable sheets</td><td>Frozen header row, auto-filter across the used range, sensible column widths.</td></tr>
+        <tr><td>Never exported</td><td><code>password_hash</code>, <code>search_vector</code>, and the two MCP secret-magnet fields <code>launch_command</code> and <code>required_env_vars</code>.</td></tr>
+        <tr><td>Empty results</td><td>A single "No Results" sheet naming the query, rather than a file that will not open.</td></tr>
+        <tr><td>Filename</td><td>Records the query and a timestamp — <code>search_customer_pii_20260924-1830.xlsx</code>.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="governance">Change requests</h2>
+
+    <p>The route to changing something you cannot change yourself, and the audit-friendly route to
+    changing something you can.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Values and notes</th></tr></thead>
+      <tbody>
+        <tr><td>title <span class="pill req">required</span></td><td>Short summary of what should change</td></tr>
+        <tr><td>target_object_type / target_object_id</td><td>What it is about. Set automatically from the object you raised it on</td></tr>
+        <tr><td>change_type</td><td><code>create</code> <code>update</code> <code>delete</code></td></tr>
+        <tr><td>priority</td><td><code>high</code> <code>medium</code> <code>low</code>, default medium</td></tr>
+        <tr><td>description</td><td>Why the change is needed</td></tr>
+        <tr><td>requested_changes</td><td>Which fields should change, and to what. For relationship requests this is filled automatically with a structured payload</td></tr>
+        <tr><td>cr_status</td><td><code>submitted</code> → <code>under_review</code> → <code>partially_approved</code> → <code>approved</code> / <code>rejected</code> / <code>implemented</code></td></tr>
+        <tr><td>requested_by / reviewed_by</td><td>Who asked, who decided</td></tr>
+        <tr><td>review_comments</td><td>Notes for the requester. Required when rejecting</td></tr>
+        <tr><td>requested_date / reviewed_date</td><td>Timestamps</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="cr-states">What each state means</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>submitted</code></td><td>Raised, nobody has looked yet.</td></tr>
+        <tr><td><code>under_review</code></td><td>Being considered.</td></tr>
+        <tr><td><code>partially_approved</code></td><td>Some, but not all, required sides have approved. Only relationship requests can reach this state.</td></tr>
+        <tr><td><code>approved</code></td><td>Agreed. For a descriptive request this is the end state — a human then makes the edit.</td></tr>
+        <tr><td><code>rejected</code></td><td>Declined, with comments. One refusal settles a multi-sided request; there is no point collecting the rest.</td></tr>
+        <tr><td><code>implemented</code></td><td>Carried out. A relationship request reaches this automatically the moment the last approval lands — the decision and its effect share one transaction, so a request can never read "approved" while the catalog disagrees.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="approvals">Approval routing</h3>
+
+    <p><strong>A single-object request</strong> needs one decision, from a steward of the target's type
+    or an administrator.</p>
+
+    <p><strong>A relationship request touches two objects with two different stewards</strong>, so one
+    approval is not enough. The request carries one approval row per facet involved, and is applied only
+    when none is still pending. Four rules make that workable:</p>
+
+    <ol class="steps">
+      <li><strong>Both ends the same type collapses to one approval.</strong> A dataset-to-dataset edge
+      needs one dataset steward, not two.</li>
+      <li><strong>A side the requester already stewards is pre-approved.</strong> Making someone approve
+      their own request adds a click and no scrutiny.</li>
+      <li><strong>If the requester stewards every side, it is implemented immediately</strong> — but
+      still recorded as a change request, so the change keeps its provenance.</li>
+      <li><strong>If any side has no steward at all, a non-administrator is refused up front</strong>,
+      with a message naming the unstaffed type. A request nobody could ever approve is better refused at
+      the point of asking than left to rot in a queue.</li>
+    </ol>
+
+    <p>When an approved relationship request is applied, the edge is re-validated first. If an endpoint
+    was deleted while the request waited, the edge is dropped and the reviewer is told; if anything else
+    has changed underneath, the approval is refused rather than recorded as carried out when it was not.</p>
+
+    <div class="note warn">
+      <div class="note-title">Known gap between the API and the screen</div>
+      <p>The API routes multi-sided approvals correctly: it works out which pending sides the reviewer
+      may speak for, records their decision against each, and applies the change on the last one. The
+      change-request <em>page</em> is narrower — it shows Approve and Reject only while the request is
+      <code>submitted</code> or <code>under_review</code>, and only to a steward of the request's target
+      type, which for a relationship request is the facet at the <em>from</em> end. A request sitting at
+      <code>partially_approved</code>, or one awaiting the <em>to</em> end's steward, therefore shows no
+      buttons to the person entitled to press them. Until the page catches up, that side approves via
+      <code>PUT /api/assets/change-requests/{id}/review</code>, or an administrator decides it.</p>
+    </div>
+
+    <h2 id="audit">Audit trail</h2>
+
+    <p>Auditing is <em>structural</em>. A listener sits inside the database session and diffs everything
+    about to be written, so a new endpoint is audited whether or not whoever wrote it remembered to call
+    anything. The alternative — an explicit helper call in each of the forty-odd write paths — is one
+    forgotten line away from a silent hole in the trail.</p>
+
+    <div class="table-wrap">
+    <table class="fields">
+      <thead><tr><th>Recorded</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>object_type / object_id</td><td>What was touched. A deliberately generic pointer, so a row survives the deletion of the thing it describes</td></tr>
+        <tr><td>action</td><td><code>created</code> <code>updated</code> <code>deleted</code> <code>relationship_added</code> <code>relationship_removed</code> <code>relationship_proposed</code></td></tr>
+        <tr><td>field_changes</td><td>For an update: every field that actually changed, with its old and new value. Fields that were touched but unchanged produce no row at all</td></tr>
+        <tr><td>summary</td><td>A human one-liner, so the interface never has to reconstruct meaning from a diff</td></tr>
+        <tr><td>performed_by / performed_at</td><td>Who and when. The acting user is captured from the request itself, before any dependency runs</td></tr>
+        <tr><td>via</td><td><code>ui</code> · <code>cr_apply</code> · <code>admin_bypass</code> · <code>seed</code></td></tr>
+        <tr><td>source_cr_id</td><td>The change request that authorised it, where there was one</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Three details worth knowing:</p>
+
+    <ul>
+      <li><strong>Noise is excluded.</strong> <code>created_at</code>, <code>updated_at</code>,
+      <code>search_vector</code> and <code>password_hash</code> never appear in a diff.</li>
+      <li><strong>A relationship is recorded against both endpoints.</strong> Without that, the far
+      object's history would be silent about something that visibly changed its page.</li>
+      <li><strong>An administrator shortcut is never silently equivalent to an approved change.</strong>
+      The Audit tab shows it as an orange "Administrator" chip, with a green "Approved change" chip and a
+      link to the request for the other case.</li>
+    </ul>
+
+    <p>Each object's Audit tab paginates newest-first and expands any row to show the before → after of
+    every field in that edit.</p>
+
+    <h2 id="people">People and stewardship</h2>
+
+    <p>People have a name, email, department, job title, phone, an account role and a status. They are
+    searchable like any other object and have their own detail pages. Passwords are set once at creation
+    and are never readable or editable afterwards, by anyone, administrators included — the detail page
+    shows a mask over a bcrypt hash and says so.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Setting</th><th>Values</th></tr></thead>
+      <tbody>
+        <tr><td>Account role</td><td><code>admin</code> · <code>normal</code></td></tr>
+        <tr><td>Status</td><td><code>active</code> · <code>inactive</code> — an inactive account is refused at sign-in</td></tr>
+        <tr><td>Steward roles</td><td>Any number of the sixteen below</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="steward-roles">The sixteen steward roles</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data catalog</th><th>AI catalog</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>System Steward · Dataset Steward · Attribute Steward · Glossary Term Steward · Project Steward · Process Steward · Policy Steward · Metric Steward</td>
+          <td>AI Application Steward · AI Agent Steward · AI Model Steward · Model Endpoint Steward · Knowledge Base Steward · MCP Server Steward · AI Tool Steward · Prompt Template Steward</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>One role per object type, seeded at startup per type rather than all-or-nothing — so a type added
+    later still gets its role rather than silently becoming administrator-only.</p>
+
+    <div class="note warn">
+      <div class="note-title">Known gap: the person form offers only six of the sixteen</div>
+      <p>All sixteen roles exist, are seeded, and are enforced by the API. The <em>person create/edit
+      form</em> currently lists only the first six — System, Dataset, Attribute, Glossary, Project and
+      Process — so Policy, Metric and the eight AI roles cannot yet be assigned from that screen. Until
+      the form catches up, assign them through
+      <code>PUT /api/users/{id}</code> with a <code>steward_facets</code> array, for example
+      <code>["policy", "ai_agent", "mcp_server"]</code>. Roles assigned that way behave normally
+      everywhere else — they appear on the person's detail page, in the user menu and in permission
+      checks.</p>
+    </div>
+
+    <h3 id="perm-matrix">Permission matrix</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Action</th><th>Administrator</th><th>Steward of that type</th><th>Everyone signed in</th></tr></thead>
+      <tbody>
+        <tr><td>View any object, detail page, graph and audit</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Search and export</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Raise a change request on anything</td><td>✓</td><td>✓</td><td>✓</td></tr>
+        <tr><td>Create / edit / delete an object</td><td>✓ any type</td><td>✓ own types only</td><td>—</td></tr>
+        <tr><td>Approve or reject a change request</td><td>✓ any</td><td>✓ targeting own types</td><td>—</td></tr>
+        <tr><td>Add or remove a relationship</td><td>✓ immediately</td><td>✓ via request; auto-applied if they steward every side</td><td>✓ via request</td></tr>
+        <tr><td>Create a person, edit a person, assign steward roles</td><td>✓</td><td>—</td><td>—</td></tr>
+        <tr><td>Delete a person</td><td>✓</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="security">Security behaviour</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Area</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td>Authentication</td><td>Email and password against a bcrypt hash. Success returns a JWT (HS256) valid for 480 minutes and the user record; the front end stores both and attaches the token to every request.</td></tr>
+        <tr><td>Session expiry</td><td>Any 401 clears the stored token and returns the user to the sign-in page.</td></tr>
+        <tr><td>Inactive accounts</td><td>Refused at sign-in with a distinct message.</td></tr>
+        <tr><td>Authorisation</td><td>Re-checked server-side on every write. Hiding a button is a convenience, never the control.</td></tr>
+        <tr><td>Passwords</td><td>Hashed with bcrypt, never returned by any endpoint, never editable from the person form, never exported.</td></tr>
+        <tr><td>Audit actor</td><td>Captured from the request's own context before any dependency runs, so the trail is correct even for writes that happen deep inside a database flush.</td></tr>
+        <tr><td>Secrets in the catalog</td><td>MCP environment variables are names only, and both that field and the launch command are excluded from exports.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note warn">
+      <div class="note-title">Phase 1 defaults you must change before real use</div>
+      <p>CORS currently allows all origins; the signing key, database URL and default administrator
+      credentials all have development defaults in the source. Set <code>SECRET_KEY</code> and
+      <code>DATABASE_URL</code> from the environment, narrow CORS to your own origin, and replace the
+      seeded administrator, before putting this in front of anyone.</p>
+    </div>
+
+    <h2 id="ui">Screens</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Screen</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Sign in</strong></td><td>Email and password. Everything else in the application is behind it.</td></tr>
+        <tr><td><strong>Dashboard</strong></td><td>A large search box, then counts per object type in three sections — Data Catalog, AI Catalog, Governance — each card clicking through to its list. A running total across all types sits under the title.</td></tr>
+        <tr><td><strong>Sidebar</strong></td><td>Dashboard, then two collapsible catalog groups, then Change Requests and People. The containing group stays open on a deep link or a refresh, and the menu scrolls independently of the brand.</td></tr>
+        <tr><td><strong>Header</strong></td><td>A user menu showing your account role and any steward roles you hold, with sign-out.</td></tr>
+        <tr><td><strong>List page</strong></td><td>One per object type: reference number, name, a few type-specific columns and lifecycle status, paginated, with a create button for those allowed to use it.</td></tr>
+        <tr><td><strong>Detail page</strong></td><td>Header with reference, name, status and parent, then four tabs — Overview, Relationships, Change Requests, Audit. The open tab lives in the URL, so a tab is linkable and survives a refresh. Change requests have no Relationships tab, by design.</td></tr>
+        <tr><td><strong>Create / edit modal</strong></td><td>One dynamic form driven by the object type, with the right fields, the right value lists and the right required markers.</td></tr>
+        <tr><td><strong>Add relationship modal</strong></td><td>Pick the relationship, then the target — the target list is filtered to the facet the chosen relationship allows, and excludes the object itself. A live preview shows the sentence it will read as, both ways. The confirm button says "Add Relationship" for an administrator and "Raise Change Request" for everyone else.</td></tr>
+        <tr><td><strong>Search results</strong></td><td>Chips with counts, twenty per page, an export button showing the full result count.</td></tr>
+        <tr><td><strong>People</strong></td><td>List and detail, with role and steward chips. Administrators get add and edit.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="api">API surface</h2>
+
+    <p>Everything the interface does is a documented HTTP endpoint. With the backend running, the
+    interactive Swagger UI is at <code>http://localhost:8000/docs</code> on the development stack, and
+    at <code>/docs</code> on the application's own port — <code>http://127.0.0.1:8080/docs</code> by
+    default — on a deployment, where <code>DGP_DOCS_ENABLED</code> can switch it off. All endpoints require a bearer
+    token except <code>/api/auth/login</code>, <code>/api/auth/register</code> and
+    <code>/api/health</code>.</p>
+
+    <p><code>{facet}</code> below is any of: <code>systems</code>, <code>datasets</code>,
+    <code>attributes</code>, <code>glossaries</code>, <code>projects</code>, <code>processes</code>,
+    <code>policies</code>, <code>metrics</code>, <code>ai-applications</code>, <code>ai-agents</code>,
+    <code>ai-models</code>, <code>model-endpoints</code>, <code>knowledge-bases</code>,
+    <code>mcp-servers</code>, <code>ai-tools</code>, <code>prompt-templates</code>.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method &amp; path</th><th>Does</th><th>Who</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /api/auth/login</code></td><td>Exchange email and password for a token</td><td>Anyone</td></tr>
+        <tr><td><code>POST /api/auth/register</code></td><td>Create a person, optionally with steward roles</td><td>Used by the admin person form</td></tr>
+        <tr><td><code>GET /api/auth/me</code></td><td>The signed-in user, with steward roles</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/users</code> · <code>GET /api/users/{id}</code></td><td>List and read people</td><td>Signed in</td></tr>
+        <tr><td><code>PUT /api/users/{id}</code> · <code>DELETE /api/users/{id}</code></td><td>Edit or remove a person, assign steward roles</td><td>Administrator</td></tr>
+        <tr><td><code>GET /api/assets/{facet}</code></td><td>List every object of a type</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/assets/{facet}/{id}</code></td><td>One object, all its own columns</td><td>Signed in</td></tr>
+        <tr><td><code>POST /api/assets/{facet}</code></td><td>Create, assigning a reference number</td><td>Steward of that type, or admin</td></tr>
+        <tr><td><code>PUT /api/assets/{facet}/{id}</code></td><td>Update. Omitted fields keep their value</td><td>Steward of that type, or admin</td></tr>
+        <tr><td><code>DELETE /api/assets/{facet}/{id}</code></td><td>Delete</td><td>Steward of that type, or admin</td></tr>
+        <tr><td><code>GET /api/assets/{facet}/{id}/detail</code></td><td>Parent, children, related sections, people and change requests for the detail page</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/assets/change-requests</code></td><td>List, filterable by <code>target_type</code>, <code>target_id</code>, <code>cr_status</code></td><td>Signed in</td></tr>
+        <tr><td><code>POST /api/assets/change-requests</code></td><td>Raise one</td><td>Signed in</td></tr>
+        <tr><td><code>PUT /api/assets/change-requests/{id}/review</code></td><td>Record a decision — and apply it, for relationship requests, once every side agrees</td><td>Steward of the target type, or admin</td></tr>
+        <tr><td><code>GET /api/relationships/types</code></td><td>The catalogue; <code>?facet=</code> narrows it to types that facet can take part in</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/relationships/{facet}/{id}</code></td><td>Every edge touching an object, grouped by type and direction, plus its hierarchy</td><td>Signed in</td></tr>
+        <tr><td><code>POST /api/relationships</code></td><td>Add an edge. Responds <code>applied</code> or <code>change_request</code></td><td>Signed in</td></tr>
+        <tr><td><code>DELETE /api/relationships/{id}</code></td><td>Remove an edge, same two outcomes</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/relationships/{facet}/{id}/audit</code></td><td>Audit page for an object; <code>limit</code> ≤ 200, <code>offset</code></td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/relationships/{facet}/{id}/graph</code></td><td>Nodes and edges; <code>depth</code> 1–3, <code>include_hierarchy</code>, <code>limit</code> 10–250</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/search</code></td><td><code>q</code>, <code>limit</code> ≤ 100, <code>offset</code>, <code>with_counts</code>, <code>log</code></td><td>Signed in</td></tr>
+        <tr><td><code>POST /api/search/click</code></td><td>Record that a result was opened, feeding the usage boost</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/search/export</code></td><td>The whole result set as an .xlsx stream</td><td>Signed in</td></tr>
+        <tr><td><code>GET /api/health</code></td><td>Liveness check</td><td>Anyone</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">One convention to know if you call the API directly</div>
+      <p>Enum fields are sent and received as their lower-case values —
+      <code>"lifecycle_status": "active"</code>, <code>"trust_status": "quarantined"</code> — not as
+      internal names. On update, a field you omit keeps its current value rather than being cleared.</p>
+    </div>
+
+    <h2 id="not-features">Deliberate omissions, and what is next</h2>
+
+    <p>Some things are absent on purpose, because an existing object type already models them:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Not an object type</th><th>Modelled instead as</th></tr></thead>
+      <tbody>
+        <tr><td>Evaluations, benchmarks, cost, latency, drift monitors</td><td>A <strong>Metric</strong> related to the AI object it scores — it has a calculation, a target, thresholds and a direction of good</td></tr>
+        <tr><td>Guardrails</td><td>A <strong>Policy</strong> with <code>policy_type = guardrail</code> and an enforcement level</td></tr>
+        <tr><td>Vector databases</td><td>A <strong>System</strong> with <code>system_type = vector_database</code></td></tr>
+        <tr><td>AI use cases</td><td>A <strong>Project</strong>, which already carries sponsor, dates and status</td></tr>
+        <tr><td>Model and prompt versions</td><td>Columns on a mutable record plus the audit trail, rather than immutable version rows</td></tr>
+        <tr><td>Datasets used for training</td><td>The existing <strong>Dataset</strong>, via <code>trained on</code> / <code>fine-tuned on</code> / <code>evaluated on</code> edges</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Known gaps, tracked in the project roadmap: there is no migration tool yet (the schema is created
+    and reconciled at startup); there is no repository scanner yet, which is what the scanner-ready
+    columns are waiting for; steward assignment is per type rather than per object; metric
+    <em>values</em> over time are not stored, only metric definitions; and bulk import, custom
+    relationship types, policy compliance reporting, dashboard analytics and notifications are planned
+    rather than present.</p>
+
+    <div class="pagenav">
+      <a href="usage.html"><span class="kicker">Next</span><strong>Using the product →</strong>
+      Step-by-step guides for everyday work.</a>
+      <a href="index.html"><span class="kicker">Back</span><strong>← Overview</strong>
+      Concepts, architecture and how to run it.</a>
+    </div>
+
+    <div class="footer">
+      <span>DataGovern — feature reference.</span>
+      <span>Matches the Phase&nbsp;1 catalog: 17 object types, 141 relationship types.</span>
+    </div>
+
+  </main>
+
+  <nav class="toc" aria-label="On this page"></nav>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

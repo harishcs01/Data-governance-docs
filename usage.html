@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using the product — DataGovern Documentation</title>
+<meta name="description" content="Task-by-task guide to DataGovern: first run, registering data and AI assets, relating them, searching, exporting, change requests, audit and per-role routines.">
+<link rel="stylesheet" href="assets/docs.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+</head>
+<body>
+
+<header class="topbar">
+  <button class="icon-btn menu-btn" data-menu-toggle aria-expanded="false" aria-label="Open navigation">☰</button>
+  <a class="brand" href="index.html"><span class="mark">DG</span> DataGovern <small>Documentation</small></a>
+  <nav class="topnav">
+    <a href="index.html">Overview</a>
+    <a href="install.html">Install &amp; operate</a>
+    <a href="features.html">Features</a>
+    <a href="usage.html" aria-current="page">Using the product</a>
+    <a href="../README.md">README</a>
+    <button class="icon-btn" data-theme-toggle type="button">☾</button>
+  </nav>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <h4>Getting going</h4>
+    <a href="#first-run">First run</a>
+    <a href="#tour">Finding your way around</a>
+    <a href="#setup-people">Setting up people</a>
+    <a href="#order">What to catalog first</a>
+
+    <h4>Cataloguing</h4>
+    <a href="#register-data">Registering data assets</a>
+    <a href="#glossary-work">Building the glossary</a>
+    <a href="#policy-metric">Policies and metrics</a>
+    <a href="#register-ai">Registering AI assets</a>
+    <a href="#worked-rag">Worked example: a RAG copilot</a>
+
+    <h4>Connecting</h4>
+    <a href="#relating">Adding a relationship</a>
+    <a href="#removing-rel">Removing one</a>
+    <a href="#pii-walkthrough">Worked example: PII exposure</a>
+    <a href="#graph-reading">Reading the graph</a>
+
+    <h4>Finding</h4>
+    <a href="#searching">Searching</a>
+    <a href="#recipes">Search recipes</a>
+    <a href="#exporting">Exporting to Excel</a>
+
+    <h4>Governing</h4>
+    <a href="#change-requests">Raising a change request</a>
+    <a href="#reviewing">Reviewing one</a>
+    <a href="#multi-sided">Two-sided approvals</a>
+    <a href="#audit-reading">Reading the audit trail</a>
+
+    <h4>Routines</h4>
+    <a href="#role-reader">If you only read</a>
+    <a href="#role-steward">If you are a steward</a>
+    <a href="#role-admin">If you are an administrator</a>
+    <a href="#role-ai">If you run AI governance</a>
+    <a href="#hygiene">Catalog hygiene</a>
+
+    <h4>Help</h4>
+    <a href="#operating">Starting and stopping</a>
+    <a href="#faq">Troubleshooting &amp; FAQ</a>
+
+    <h4>Install &amp; operate</h4>
+    <a href="install.html">Installation guide</a>
+    <a href="install.html#checking-prod">Checking the services</a>
+    <a href="install.html#logs">Where every log is</a>
+    <a href="install.html#passwords">Passwords and accounts</a>
+    <a href="install.html#backup">Backup and restore</a>
+  </aside>
+
+  <main class="content">
+
+    <h1>Using DataGovern</h1>
+    <p class="lede">A task-by-task guide: get signed in, put a real estate into the catalog, connect the
+    AI half to the data half, and then run the thing day to day — searching, requesting, reviewing and
+    answering audit questions.</p>
+
+    <p>For <em>what exists</em> rather than <em>how to use it</em>, see the
+    <a href="features.html">feature reference</a>. For concepts and architecture, the
+    <a href="index.html">overview</a>.</p>
+
+    <h2 id="first-run">First run</h2>
+
+    <ol class="steps">
+      <li><strong>Start the three services.</strong> From the repository root:
+        <pre><code>services/all.sh start
+services/all.sh status   # confirm postgres, backend and frontend are up</code></pre>
+        The first backend start creates the tables, builds the search indexes, seeds the sixteen steward
+        roles, seeds the default administrator and seeds the 141 relationship types. It takes a few
+        seconds longer than later starts.</li>
+
+      <li><strong>Open the application.</strong> On the development stack that is
+      <code>http://localhost:3000</code>; on a deployment it is the address
+      <a href="install.html#install">the installer printed</a>, <code>http://127.0.0.1:8080</code> by
+      default. <code>./dgp status</code> will tell you if you have forgotten.</li>
+
+      <li><strong>Sign in</strong> with <code>admin@datagovern.com</code> / <code>admin123</code>.
+        You land on the dashboard with every count at zero.</li>
+
+      <li><strong>Create your own administrator account immediately.</strong> People → Add Person →
+        role <strong>Admin</strong>. Sign out, sign back in as yourself.</li>
+
+      <li><strong>Retire the seeded account.</strong> Open <code>admin@datagovern.com</code> from the
+        People page and set its status to <strong>Inactive</strong>, or delete it. An inactive account is
+        refused at sign-in.</li>
+    </ol>
+
+    <div class="note danger">
+      <div class="note-title">Do step 4 and 5 before anyone else has the URL</div>
+      <p>The seeded credentials are in the source code and in this documentation. They exist so a fresh
+      database is usable, not so a shared instance can run on them. While you are there, make sure
+      <code>SECRET_KEY</code> and <code>DATABASE_URL</code> are being supplied from the environment
+      rather than taking their development defaults.</p>
+    </div>
+
+    <h2 id="tour">Finding your way around</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Where</th><th>What it is for</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Sidebar</strong></td><td>Dashboard at the top, then two collapsible groups — <span class="pill data">Data Catalog</span> with eight types and <span class="pill ai">AI Catalog</span> with eight — then Change Requests and People. Whichever group contains the page you are on opens automatically, including on a refresh or a shared link.</td></tr>
+        <tr><td><strong>User menu</strong></td><td>Top right. Shows your account role and any steward roles you hold — the quickest way to check why a button is missing.</td></tr>
+        <tr><td><strong>Dashboard</strong></td><td>The search box, and counts per type in three sections. Click any card to go to that list. Two characters is enough to start getting suggestions; Enter goes to the full results page, whose URL can be shared.</td></tr>
+        <tr><td><strong>List page</strong></td><td>Reference number, name, a few type-specific columns and status. The reference chip and the name both link through. A <strong>Create</strong> button appears only if you are allowed to use it.</td></tr>
+        <tr><td><strong>Detail page</strong></td><td>Four tabs: <strong>Overview</strong> (all fields plus who created and last changed it), <strong>Relationships</strong> (list or graph, plus read-only hierarchy), <strong>Change Requests</strong> (everything raised against this object) and <strong>Audit</strong> (the full history). The open tab is in the URL, so you can link someone straight to a tab.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">A button you expected is missing</div>
+      <p>That is the permission model, not a bug. <strong>Create</strong> and <strong>Edit</strong> need
+      administrator rights or the steward role for that specific type; <strong>Approve</strong> and
+      <strong>Reject</strong> need the steward role for the <em>target</em> type of that request. Check
+      the user menu for what you hold. <strong>Raise Change Request</strong> is always available — that
+      is the point of it.</p>
+    </div>
+
+    <h2 id="setup-people">Setting up people</h2>
+
+    <p>Do this before cataloguing anything, because stewardship decides who can enter data at all, and
+    an unstaffed type quietly becomes administrator-only.</p>
+
+    <ol class="steps">
+      <li><strong>People → Add Person.</strong> Fill in name, email and a password, pick the account
+      role — <strong>Normal</strong> for almost everyone — and add department and job title so they are
+      findable in search.</li>
+      <li><strong>Assign steward roles</strong> in the same form. Give each person the types they
+      genuinely own. Several roles on one person is normal and expected.
+      <div class="note warn" style="margin-top:10px">
+        <div class="note-title">The form currently offers six of the sixteen roles</div>
+        <p>System, Dataset, Attribute, Glossary, Project and Process can be assigned from the screen.
+        Policy, Metric and the eight AI roles exist and are fully enforced, but are not yet in the
+        picker — assign those with <code>PUT /api/users/{id}</code> and a
+        <code>steward_facets</code> array such as
+        <code>["policy","metric","ai_agent","mcp_server"]</code>. Everything downstream treats them
+        identically.</p>
+      </div></li>
+      <li><strong>Leave account role as Normal for stewards.</strong> A steward is a normal account with
+      steward roles attached. Administrator is a much bigger grant: it bypasses the approval flow
+      entirely.</li>
+      <li><strong>Check every type has a steward.</strong> Any type with nobody assigned can only be
+      edited by an administrator, and — more awkwardly — a non-administrator trying to relate anything
+      to it is refused up front, because nobody could ever approve the request.</li>
+    </ol>
+
+    <h3 id="who-gets-what">Who should hold which role</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Give this role to</th><th>Typically</th></tr></thead>
+      <tbody>
+        <tr><td>System, Dataset, Attribute Steward</td><td>Data platform and data engineering</td></tr>
+        <tr><td>Glossary Term Steward</td><td>The business-glossary owner or data governance office</td></tr>
+        <tr><td>Project Steward</td><td>Delivery or programme management</td></tr>
+        <tr><td>Process Steward</td><td>Whoever owns the pipelines</td></tr>
+        <tr><td>Policy Steward</td><td>Data governance, privacy or compliance</td></tr>
+        <tr><td>Metric Steward</td><td>Analytics or the office that publishes the numbers</td></tr>
+        <tr><td>AI Application, AI Agent Steward</td><td>The AI platform team</td></tr>
+        <tr><td>AI Model, Model Endpoint Steward</td><td>ML platform / inference infrastructure</td></tr>
+        <tr><td>Knowledge Base Steward</td><td>Whoever builds and refreshes the indexes</td></tr>
+        <tr><td>MCP Server, AI Tool Steward</td><td>Security or the platform team — these are where data access actually happens</td></tr>
+        <tr><td>Prompt Template Steward</td><td>Whoever reviews prompt wording before it ships</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="order">What to catalog first</h2>
+
+    <p>Structure has to exist before what hangs off it. Two required parents dictate most of the order:
+    a dataset needs a system, an attribute needs a dataset, an endpoint needs a model.</p>
+
+    <div class="flow">
+      <span class="box">Systems</span><span class="arrow">→</span>
+      <span class="box">Datasets</span><span class="arrow">→</span>
+      <span class="box">Attributes</span><span class="arrow">→</span>
+      <span class="box">Glossary</span><span class="arrow">→</span>
+      <span class="box">Policies &amp; Metrics</span>
+    </div>
+    <div class="flow">
+      <span class="box">AI Models</span><span class="arrow">→</span>
+      <span class="box">Endpoints</span><span class="arrow">→</span>
+      <span class="box">MCP Servers</span><span class="arrow">→</span>
+      <span class="box">Tools</span><span class="arrow">→</span>
+      <span class="box">Knowledge Bases</span><span class="arrow">→</span>
+      <span class="box">Prompts</span><span class="arrow">→</span>
+      <span class="box">Applications</span><span class="arrow">→</span>
+      <span class="box">Agents</span>
+    </div>
+
+    <p>Agents come last because an agent is mostly a set of relationships to things that must already
+    exist. Relationships come after both passes.</p>
+
+    <div class="note">
+      <div class="note-title">Do not try to be complete on the first pass</div>
+      <p>Register the objects with their name, owner and classification, then enrich. A catalog of 200
+      thinly-described objects that are correctly <em>related</em> answers more questions than 40
+      beautifully-described ones that are not.</p>
+    </div>
+
+    <h2 id="register-data">Registering data assets</h2>
+
+    <h3 id="add-system">Add a system</h3>
+
+    <ol class="steps">
+      <li><strong>Data Catalog → Systems → Create System.</strong></li>
+      <li><strong>Name it as people say it</strong> — "Salesforce CRM", not "sfdc-prod-01". The technical
+      name belongs in the description or the URL, and search will find both.</li>
+      <li><strong>Pick the system type.</strong> Note the three AI-infrastructure types:
+      <code>vector_database</code> for a Qdrant or pgvector cluster, <code>ai_platform</code>,
+      <code>model_gateway</code> for a LiteLLM or similar router. Registering these as systems is what
+      lets a knowledge base later say which system it is <em>stored in</em>.</li>
+      <li><strong>Set environment and data classification.</strong> Classification here is the
+      <em>highest</em> class the system holds.</li>
+      <li><strong>Fill in owner and technical contact.</strong> These are searched at high weight — "who
+      owns X" is a real query.</li>
+      <li><strong>Set a parent</strong> only for genuine platform → component containment.</li>
+    </ol>
+
+    <h3 id="add-dataset">Add a dataset</h3>
+
+    <ol class="steps">
+      <li><strong>Datasets → Create Dataset</strong>, and pick the system. This is required; there is no
+      orphan dataset.</li>
+      <li><strong>Set schema and database names.</strong> Weighted highly in search because that is how
+      engineers look a table up.</li>
+      <li><strong>Choose the dataset type</strong> — table, view, file, API endpoint, report or
+      stream.</li>
+      <li><strong>Set classification, update frequency and retention.</strong> Retention is free text so
+      you can write what the policy actually says.</li>
+      <li><strong>Leave row count approximate.</strong> It is a sense of scale, not a metric.</li>
+    </ol>
+
+    <h3 id="add-attribute">Add attributes</h3>
+
+    <p>You do not need every column. Catalog the ones that carry meaning or risk: keys, identifiers,
+    anything personal or financial, anything a metric is calculated from, anything a prompt or a tool
+    touches.</p>
+
+    <ol class="steps">
+      <li><strong>Attributes → Create Attribute</strong>, and pick the dataset.</li>
+      <li><strong>Set the data type and length.</strong></li>
+      <li><strong>Tick primary key and business key separately.</strong> The business key is what a
+      person would identify a row by, which is often not the primary key.</li>
+      <li><strong>Set the classification honestly at this level.</strong> This is the field the AI
+      exposure question is answered against — a <code>restricted</code> column is what makes a knowledge
+      base indexing it worth knowing about.</li>
+      <li><strong>Use sample values and validation rules</strong> to say what good data looks like.
+      Sample values are searchable, which is surprisingly useful for finding a column when you only
+      remember what was in it.</li>
+    </ol>
+
+    <h2 id="glossary-work">Building the glossary</h2>
+
+    <ol class="steps">
+      <li><strong>Start with the terms people argue about</strong> — "active customer", "churn",
+      "booked revenue". A glossary of undisputed terms is decoration.</li>
+      <li><strong>Write the definition, then the usage guidelines.</strong> The definition says what it
+      means; the guidelines say when to use it and when not to, which is where most disputes actually
+      live.</li>
+      <li><strong>Fill in synonyms and the abbreviation.</strong> Search matches them and then explains
+      itself: a term found through a synonym shows "synonym: …" in the result, so it does not look like
+      a mistake.</li>
+      <li><strong>Set the domain and the source of definition.</strong> "Where did this wording come
+      from?" is the second question anyone asks.</li>
+      <li><strong>Use the parent term for broader → narrower</strong> only. For anything else — synonym
+      of, acronym for, related to, replaces — use a relationship, which is navigable.</li>
+      <li><strong>Then connect it to the physical world.</strong> Add <em>Represents</em> edges to the
+      dataset or column the term is realised by, and <em>Classifies</em> to the columns it labels. That
+      is what turns a word list into a catalog.</li>
+    </ol>
+
+    <h2 id="policy-metric">Recording policies and metrics</h2>
+
+    <h3 id="add-policy">A policy</h3>
+
+    <ol class="steps">
+      <li><strong>Policies → Create Policy.</strong> Pick the type — including <code>guardrail</code>
+      and <code>ai_ethics</code>, which is how AI guardrails are modelled here.</li>
+      <li><strong>Set enforcement level.</strong> Mandatory, recommended or advisory. Without it a policy
+      is a wish.</li>
+      <li><strong>Set the policy status separately from the lifecycle status.</strong> A policy can be a
+      live catalog entry that is still a draft.</li>
+      <li><strong>Record the regulation and jurisdiction</strong>, and the effective and review dates.
+      The review date is what turns a policy library into a working calendar.</li>
+      <li><strong>Use the parent field for Policy → Standard → Rule.</strong></li>
+      <li><strong>Then relate it.</strong> A policy that governs nothing governs nothing. Add
+      <em>Governs</em> edges to the systems, datasets, attributes, processes, projects — and any of the
+      eight AI object types — it applies to.</li>
+    </ol>
+
+    <h3 id="add-metric">A metric</h3>
+
+    <ol class="steps">
+      <li><strong>Write the calculation.</strong> This is the reason the record exists.</li>
+      <li><strong>Set unit, aggregation and grain</strong>, so two teams cannot compute it differently.</li>
+      <li><strong>Set the trend goal.</strong> Higher is better, lower is better, or within range —
+      without it, nobody can tell whether the number is good.</li>
+      <li><strong>Set target, warning and critical thresholds.</strong></li>
+      <li><strong>Do not look for a "data source" box.</strong> There is not one, deliberately. Add
+      <em>Calculated from</em> edges to the datasets and attributes instead — those the catalog can
+      follow when one of them changes.</li>
+    </ol>
+
+    <div class="note">
+      <div class="note-title">This is also how you record an AI evaluation</div>
+      <p>An eval score, a benchmark, a latency budget, a cost-per-call ceiling or a drift monitor is a
+      Metric with a calculation, a target and thresholds, related to the agent, model, endpoint,
+      knowledge base, tool or prompt it scores by a <em>Measures</em> edge. There is no separate
+      evaluation object to learn.</p>
+    </div>
+
+    <h2 id="register-ai">Registering AI assets</h2>
+
+    <p>Work bottom-up. Each step below only needs things the previous steps created.</p>
+
+    <h3 id="ai-model-step">1 · AI Models</h3>
+    <p>One row per set of weights you use, including the embedding models. Set provider, family, modality
+    and kind. Put the alias you write in code in <strong>version</strong> (<code>gpt-4o</code>) and the
+    pinned build a trace reports in <strong>resolved version</strong>
+    (<code>gpt-4o-2024-08-06</code>) — keeping both is what later answers "which model was actually live
+    in March?". Fill the model-card triad — intended use, limitations, known bias — even briefly; it is
+    the part a regulator asks for and the part that never survives a spreadsheet. Use the parent field
+    only for a model <em>group</em>; a fine-tune's base model is an edge, added later.</p>
+
+    <h3 id="ai-endpoint-step">2 · Model Endpoints</h3>
+    <p>One row per route, not per model. The same weights served in two regions is one model and two
+    endpoints. Record the serving engine, protocol, auth type, region and — the two that matter most —
+    <strong>data residency</strong> (where prompts physically go) and <strong>prompt retention
+    days</strong> (whether the provider keeps them). Set <strong>approved data classification</strong>:
+    this is the ceiling you will later compare against what the agents using this route actually
+    touch.</p>
+
+    <h3 id="ai-mcp-step">3 · MCP Servers</h3>
+    <p>One row per server. Put the reverse-DNS registry name in <strong>server name</strong> — it is the
+    natural key and is searched at name weight. Set <strong>trust status</strong> deliberately: anything
+    you have not reviewed belongs in <code>quarantined</code>, not <code>unknown</code> and certainly not
+    <code>approved</code>. Record transport, registry type, scope and auth type.</p>
+
+    <div class="note danger">
+      <div class="note-title">Never paste a secret into required environment variables</div>
+      <p>That field takes variable <em>names</em> only, and the launch command must not carry an inline
+      token. Both fields are excluded from every Excel export precisely because they attract pasted
+      credentials — but excluding them from the export does not remove them from the database.</p>
+    </div>
+
+    <h3 id="ai-tool-step">4 · AI Tools</h3>
+    <p>One row per callable thing an agent can bind to, whether or not it comes from an MCP server. Set
+    the tool kind and access mode, and then set the four hints exactly as the server declares them:
+    <strong>read-only</strong>, <strong>destructive</strong>, <strong>idempotent</strong>,
+    <strong>open-world</strong>. They cost nothing to record and they are the cheapest risk signal you
+    will get. Describe side effects in plain words — "creates a refund", "emails the customer" — and set
+    <code>contains_pii</code> honestly.</p>
+
+    <h3 id="ai-kb-step">5 · Knowledge Bases</h3>
+    <p>One row per retrieval index. Record the store, collection name, embedding dimension, distance
+    metric, chunking strategy, chunk size and overlap, top-k and refresh schedule — enough that someone
+    could rebuild it. Set <code>contains_pii</code> and the classification: this is the field that
+    propagates outward to every agent that retrieves from it. The embedding model and the vector store
+    are <em>relationships</em>, added in the next phase, not fields here.</p>
+
+    <h3 id="ai-prompt-step">6 · Prompt Templates</h3>
+    <p>Register prompts that are reviewed, shared or shipped. Put the text in, list the variables, set
+    the role, and set <code>contains_pii</code> and <code>contains_secrets</code> — either being true is
+    a finding. Record who reviewed the wording and when. Agents whose prompt is inline and unreviewed can
+    keep it in the agent's own <em>instructions</em> field instead.</p>
+
+    <h3 id="ai-app-step">7 · AI Applications</h3>
+    <p>One row per deployable unit — a repo, a service, a product. This is where business accountability
+    sits, so fill in <strong>intended purpose</strong> and <strong>human oversight</strong> properly:
+    they are named EU AI Act obligations, and they are asked about the system, not the function. Set the
+    risk tier rather than leaving it <code>unassessed</code>, and record the business and technical
+    owners.</p>
+
+    <h3 id="ai-agent-step">8 · AI Agents</h3>
+    <p>Last, because an agent is mostly relationships. Beyond name and type, three fields carry the
+    governance weight:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Field</th><th>Why it is the one that matters</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Autonomy level</strong></td><td>Decides whether human-oversight obligations bite. Suggest-only and autonomous are entirely different risk objects.</td></tr>
+        <tr><td><strong>Acts on behalf of</strong></td><td><code>end_user</code> means data access is scoped to the invoking human. <code>service_account</code> means standing access of its own, which is a far larger blast radius.</td></tr>
+        <tr><td><strong>Sponsor</strong></td><td>The accountable human. An agent with no sponsor is nobody's problem until it is everybody's.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Also set the framework, goal, memory type, environment and classification, and attach it to its
+    application if one exists. If not, leave the application empty — that is allowed on purpose, and you
+    can attach it later.</p>
+
+    <h2 id="worked-rag">Worked example: cataloguing a RAG copilot</h2>
+
+    <p>A support copilot that answers from a knowledge base built over the ticket archive, and can look
+    up an order through an internal MCP server.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Create</th><th>Key fields</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="pill data">SYS</span> Support Ticketing Platform</td><td>type <code>application</code>, environment production, classification confidential</td></tr>
+        <tr><td>2</td><td><span class="pill data">SYS</span> Qdrant Vector Cluster</td><td>type <code>vector_database</code>, environment production</td></tr>
+        <tr><td>3</td><td><span class="pill data">DS</span> tickets</td><td>in the ticketing system, type <code>table</code>, classification confidential</td></tr>
+        <tr><td>4</td><td><span class="pill data">ATTR</span> customer_email, ticket_body</td><td>in <code>tickets</code>; classification restricted on the email column</td></tr>
+        <tr><td>5</td><td><span class="pill ai">MDL</span> GPT-4o · <span class="pill ai">MDL</span> text-embedding-3-large</td><td>provider openai; modality text and embedding respectively</td></tr>
+        <tr><td>6</td><td><span class="pill ai">EP</span> gpt-4o · EU Azure</td><td>model GPT-4o, engine <code>azure_openai</code>, region EU, residency EU, retention 0 days, approved class confidential</td></tr>
+        <tr><td>7</td><td><span class="pill ai">MCP</span> io.internal/orders-mcp</td><td>transport <code>streamable_http</code>, scope <code>internal</code>, trust <code>approved</code>, auth <code>oauth2</code></td></tr>
+        <tr><td>8</td><td><span class="pill ai">TOOL</span> get_order_status</td><td>on that server, kind <code>mcp_tool</code>, access <code>read</code>, read-only hint true, destructive false</td></tr>
+        <tr><td>9</td><td><span class="pill ai">KB</span> support-history-v2</td><td>store qdrant, collection <code>support_v2</code>, dimension 3072, cosine, recursive chunking, contains PII <strong>yes</strong>, classification confidential</td></tr>
+        <tr><td>10</td><td><span class="pill ai">PT</span> Support Copilot System Prompt</td><td>role <code>system</code>, reviewed by the prompt steward, contains secrets no</td></tr>
+        <tr><td>11</td><td><span class="pill ai">APP</span> Support Copilot</td><td>type <code>rag_app</code>, intended purpose and human oversight filled in, risk tier <code>limited</code>, owners named</td></tr>
+        <tr><td>12</td><td><span class="pill ai">AGT</span> Support Answer Agent</td><td>in that application, type <code>single</code>, autonomy <code>supervised</code>, acts on behalf of <code>end_user</code>, sponsor named</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Then the edges that make it mean something:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>From</th><th>Relationship</th><th>To</th></tr></thead>
+      <tbody>
+        <tr><td>KB support-history-v2</td><td>Indexes</td><td>DS tickets</td></tr>
+        <tr><td>KB support-history-v2</td><td>Indexes</td><td>ATTR ticket_body</td></tr>
+        <tr><td>KB support-history-v2</td><td>Stored in</td><td>SYS Qdrant Vector Cluster</td></tr>
+        <tr><td>KB support-history-v2</td><td>Embedded with</td><td>MDL text-embedding-3-large</td></tr>
+        <tr><td>TOOL get_order_status</td><td>Reads from</td><td>DS orders</td></tr>
+        <tr><td>AGT Support Answer Agent</td><td>Uses model</td><td>MDL GPT-4o</td></tr>
+        <tr><td>AGT Support Answer Agent</td><td>Invokes</td><td>EP gpt-4o · EU Azure</td></tr>
+        <tr><td>AGT Support Answer Agent</td><td>Retrieves from</td><td>KB support-history-v2</td></tr>
+        <tr><td>AGT Support Answer Agent</td><td>Uses tool</td><td>TOOL get_order_status</td></tr>
+        <tr><td>AGT Support Answer Agent</td><td>Has prompt</td><td>PT Support Copilot System Prompt</td></tr>
+        <tr><td>POL Customer Data Handling</td><td>Governs</td><td>AGT Support Answer Agent</td></tr>
+        <tr><td>MET Answer Accuracy</td><td>Measures</td><td>AGT Support Answer Agent</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>At that point the catalog can tell you, without anyone reading a log, that a supervised agent
+    acting as the end user reaches confidential ticket text through an EU-resident endpoint that retains
+    nothing, and that an accuracy metric and a customer-data policy are attached to it.</p>
+
+    <h2 id="relating">Adding a relationship</h2>
+
+    <ol class="steps">
+      <li><strong>Open the object the sentence starts with.</strong> Direction matters: a knowledge base
+      <em>indexes</em> a dataset, so start on the knowledge base. If the relationship you want is not
+      offered, you are probably on the wrong end — try the other object.</li>
+      <li><strong>Relationships tab → Add Relationship.</strong></li>
+      <li><strong>Choose the relationship.</strong> The list only shows kinds where this object is the
+      source, so the same link cannot be created two ways round and read differently on each page. Each
+      option shows what it is called and which type it points at.</li>
+      <li><strong>Choose the target.</strong> The list is filtered to the type that relationship allows,
+      and excludes the object itself. Type to search by name or reference number.</li>
+      <li><strong>Read the preview.</strong> The modal shows the sentence both ways before you commit.
+      If the reverse reads wrong, the relationship is wrong.</li>
+      <li><strong>Add a note</strong> if the reason is not obvious. "Why does this edge exist?" is the
+      question a note should answer.</li>
+      <li><strong>Submit.</strong> The button says <strong>Add Relationship</strong> if you are an
+      administrator and <strong>Raise Change Request</strong> otherwise, and the banner above the form
+      tells you which will happen.</li>
+    </ol>
+
+    <h3 id="what-happens">What happens next, by who you are</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>You are</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>An administrator</td><td>Live immediately, recorded in the audit trail of <em>both</em> objects as an administrator action with no authorising request.</td></tr>
+        <tr><td>A steward of every type involved</td><td>Live immediately, but still recorded as a change request that is implemented at once — so the change keeps its provenance without asking you to approve yourself.</td></tr>
+        <tr><td>A steward of one side</td><td>A change request is raised, your side is pre-approved, and the edge appears <em>dimmed and pending</em> on both objects until the other side's steward agrees.</td></tr>
+        <tr><td>Anyone else</td><td>A change request is raised, awaiting every side. Same pending edge on both objects.</td></tr>
+        <tr><td>Anyone, but one side has no steward</td><td>Refused immediately with a message naming the unstaffed type. Ask an administrator to assign a steward, or to add the relationship directly.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note ok">
+      <div class="note-title">A pending edge is visible on both sides on purpose</div>
+      <p>The steward on the far side should see a relationship coming, not find one already there. That
+      is why the row is written straight away and shown dimmed with a "Pending approval" chip, rather
+      than being hidden until it is agreed.</p>
+    </div>
+
+    <h2 id="removing-rel">Removing a relationship</h2>
+
+    <p>Use the delete button at the end of the row on the Relationships tab. The confirmation tells you
+    which of two things will happen: an administrator removes it immediately; anyone else raises a
+    removal request, and the edge stays live and marked "Removal pending" until that is approved. An edge
+    already awaiting a decision cannot have a second request raised against it.</p>
+
+    <p>Hierarchy rows — under the read-only <em>Hierarchy</em> heading — have no delete button. A dataset
+    belongs to its system as a matter of structure; change it by editing the dataset.</p>
+
+    <h2 id="pii-walkthrough">Worked example: which AI can reach this column?</h2>
+
+    <p>A privacy review asks which AI systems can see <code>customer_email</code>.</p>
+
+    <ol class="steps">
+      <li><strong>Find the column.</strong> Type <code>customer_email</code> in the Dashboard search, or
+      paste its reference number. Open it.</li>
+      <li><strong>Relationships tab.</strong> Look at the incoming edges. Anything reading
+      <em>"Indexed into"</em> is a knowledge base that has ingested this column; anything reading
+      <em>"Read by"</em> is a tool that queries it.</li>
+      <li><strong>Switch to Graph and set depth to 2.</strong> One hop shows the knowledge bases and
+      tools; the second hop shows the agents behind them. That picture <em>is</em> the answer.</li>
+      <li><strong>Open each agent that appears</strong> and read three fields: autonomy level, acts on
+      behalf of, and data classification. An <em>autonomous</em> agent acting as a
+      <em>service account</em> is a different finding from a <em>suggest-only</em> agent scoped to the
+      end user.</li>
+      <li><strong>Follow each agent's endpoint.</strong> On the endpoint, check data residency, prompt
+      retention days and approved data classification. If the column is <code>restricted</code> and the
+      endpoint's approved class is <code>internal</code>, you have found a mismatch.</li>
+      <li><strong>Capture it.</strong> From any search — for example <code>type:agent</code> — use
+      <strong>Export to Excel</strong> to hand the reviewer a workbook with every field, not a
+      screenshot.</li>
+      <li><strong>Close the loop in the catalog.</strong> Raise change requests on whatever needs to
+      change, and attach the governing policy to the objects it applies to with a <em>Governs</em> edge
+      so the same review is faster next time.</li>
+    </ol>
+
+    <h2 id="graph-reading">Reading the graph</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>You see</th><th>It means</th></tr></thead>
+      <tbody>
+        <tr><td>A box containing other nodes</td><td>Containment — datasets inside their system, endpoints inside their model. Turn it off with the hierarchy switch if it gets in the way.</td></tr>
+        <tr><td>Different node shapes</td><td>Data-catalog versus AI-catalog objects, so the two halves separate without reading labels.</td></tr>
+        <tr><td>Different colours</td><td>One colour per object type; the legend lists whichever types are on screen.</td></tr>
+        <tr><td>A "+N more" label on a box</td><td>That parent has more children than are drawn. Open the object itself to see them all.</td></tr>
+        <tr><td>A truncation notice</td><td>The node cap was reached. Reduce the depth, or explore from a more specific object.</td></tr>
+        <tr><td>No edge labels</td><td>Zoom in — labels appear past a zoom threshold, and on hover — otherwise a dense graph is unreadable.</td></tr>
+        <tr><td>A distinct, faded edge</td><td>A pending relationship, not yet approved.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Hovering a node dims everything except its neighbourhood, its ancestors and its descendants.
+    Clicking one navigates to it. Depth 1 answers "what touches this?"; depth 2 answers "what touches
+    that?", which is usually where the interesting answer is; depth 3 is for tracing a specific path, not
+    for browsing.</p>
+
+    <h2 id="searching">Searching</h2>
+
+    <p>Two characters starts suggestions. Enter opens the full results page. A few habits pay off:</p>
+
+    <ul>
+      <li><strong>Paste reference numbers.</strong> An exact match beats everything else by a wide
+      margin, and <code>ds-001</code>, <code>DS 001</code> and <code>ds1</code> all normalise to the
+      same thing.</li>
+      <li><strong>Type badly on purpose.</strong> Trigram matching means <code>custmer</code> still finds
+      <code>customer</code>. If everything you are seeing came from fuzzy matching, the page says so.</li>
+      <li><strong>Narrow with <code>type:</code></strong> rather than scrolling. It accepts the words
+      people use — <code>type:agent</code>, <code>type:kb</code>, <code>type:mcp</code>,
+      <code>type:kpi</code>, <code>type:column</code> — not just the route slug.</li>
+      <li><strong>Search enum values directly.</strong> <code>quarantined</code>, <code>qdrant</code>,
+      <code>autonomous</code>, <code>vllm</code> and <code>service_account</code> all match.</li>
+      <li><strong>Search people.</strong> <code>type:steward</code> or just a name; email addresses match
+      on any fragment, so <code>datagovern.com</code> finds everyone on that domain.</li>
+      <li><strong>Use the chips.</strong> Per-type counts sit above the results; clicking one filters
+      without retyping.</li>
+      <li><strong>Watch for "matched on".</strong> A glossary term found through a synonym or
+      abbreviation says so, which is often the more useful piece of information.</li>
+    </ul>
+
+    <h3 id="recipes">Search recipes</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>You want</th><th>Type this</th></tr></thead>
+      <tbody>
+        <tr><td>Every AI agent</td><td><code>type:agent</code></td></tr>
+        <tr><td>MCP servers you have not cleared</td><td><code>type:mcp quarantined</code></td></tr>
+        <tr><td>Everything on Qdrant</td><td><code>qdrant</code></td></tr>
+        <tr><td>Agents that act unattended</td><td><code>type:agent autonomous</code></td></tr>
+        <tr><td>Agents with standing credentials</td><td><code>type:agent service_account</code></td></tr>
+        <tr><td>High-risk AI objects</td><td><code>high</code> then filter with the chips, or <code>type:agent high</code></td></tr>
+        <tr><td>Everything still in draft approval</td><td><code>draft</code>, then use the chips</td></tr>
+        <tr><td>Open change requests</td><td><code>type:cr status:submitted</code></td></tr>
+        <tr><td>A column you half remember the contents of</td><td>Search the sample value — <code>type:column</code> plus the value</td></tr>
+        <tr><td>Everything a person owns</td><td>Their name — owner and contact fields are weighted highly</td></tr>
+        <tr><td>Obsolete entries to clean up</td><td><code>status:obsolete</code></td></tr>
+        <tr><td>Everything about one system, as a file</td><td>Search its name, then <strong>Export to Excel</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="exporting">Exporting to Excel</h2>
+
+    <ol class="steps">
+      <li><strong>Search for what you want.</strong> Narrow it with <code>type:</code>,
+      <code>status:</code> or the chips first — the export honours exactly what the results page is
+      showing.</li>
+      <li><strong>Click Export to Excel.</strong> The button shows the total, and the file contains
+      <em>all</em> of it, not the page you are on.</li>
+      <li><strong>Open the workbook.</strong> One sheet per object type, every column of the object,
+      relevance order preserved, headers frozen and filters applied. Column headers in <strong>red are
+      mandatory</strong> fields, read straight from the database's own constraints.</li>
+    </ol>
+
+    <p>Two things are worth knowing before you circulate one. Names, not internal ids, appear in the
+    created/updated/requested/reviewed columns. And four fields are never in the file:
+    <code>password_hash</code>, the internal search column, and the MCP <code>launch_command</code> and
+    <code>required_env_vars</code> — the last two because they attract pasted credentials and an export
+    leaves the platform.</p>
+
+    <h2 id="change-requests">Raising a change request</h2>
+
+    <p>This is how anyone gets something changed that they cannot change themselves — and a perfectly
+    reasonable way to propose a change even when you could make it.</p>
+
+    <ol class="steps">
+      <li><strong>Open the object</strong> and click <strong>Raise Change Request</strong>. It is
+      available to everyone, on every catalog object.</li>
+      <li><strong>Write a title that states the outcome</strong>, not the symptom. "Set customer_email
+      classification to restricted" beats "classification wrong".</li>
+      <li><strong>Pick the change type</strong> — update to correct or enrich, create to add something
+      related, delete to retire the object.</li>
+      <li><strong>Set the priority</strong> honestly. Everything high is the same as nothing high.</li>
+      <li><strong>Explain why in the reason field</strong>, and say exactly <em>which fields should
+      change and to what</em> in requested changes. A reviewer who has to guess will bounce it.</li>
+      <li><strong>Submit.</strong> It appears on the object's Change Requests tab and in the
+      Change Requests list, at <code>submitted</code>.</li>
+    </ol>
+
+    <h2 id="reviewing">Reviewing one</h2>
+
+    <p>You can review a request if you are an administrator, or a steward of the <em>target</em> object's
+    type. If the Approve and Reject buttons are absent, you are neither — or it has already been
+    decided.</p>
+
+    <ol class="steps">
+      <li><strong>Open the request</strong> from the Change Requests list, from the object's
+      Change Requests tab, or from a search for <code>type:cr status:submitted</code>.</li>
+      <li><strong>Read the target and the requested changes.</strong> The target object is linked at the
+      top; open it in another tab and check the current state.</li>
+      <li><strong>Approve or Reject.</strong> Comments are optional on approval and
+      <strong>required</strong> on rejection — a rejected request with no explanation just gets raised
+      again.</li>
+      <li><strong>For a descriptive request, then make the edit.</strong> Approving a request that says
+      "set this field to that value" records the decision; it does not type the value in. Open the object
+      and edit it.</li>
+      <li><strong>For a relationship request, there is nothing else to do.</strong> The last approval
+      applies the change itself, in the same transaction, and the request moves to
+      <code>implemented</code>.</li>
+    </ol>
+
+    <h2 id="multi-sided">Two-sided approvals</h2>
+
+    <p>A relationship touches two objects with two different stewards, so one approval is not enough. The
+    request carries one row per type involved and is applied only when none is still pending.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Situation</th><th>What you see</th></tr></thead>
+      <tbody>
+        <tr><td>Both ends are the same type</td><td>One approval. A dataset-to-dataset edge needs one dataset steward.</td></tr>
+        <tr><td>You steward one of the two sides</td><td>Your side is pre-approved automatically; the request waits on the other. Its status is <code>partially_approved</code>.</td></tr>
+        <tr><td>You steward both sides</td><td>It is implemented immediately and still recorded as a request, so the change keeps its provenance.</td></tr>
+        <tr><td>You steward neither side</td><td>Trying to review it returns a message naming which type it is waiting on.</td></tr>
+        <tr><td>Anyone rejects</td><td>One refusal settles it. The request goes to <code>rejected</code> and a pending edge is removed, or a pending removal is cancelled.</td></tr>
+        <tr><td>An endpoint was deleted while it waited</td><td>The approval is refused rather than recorded as carried out, and you are told why. Re-raise it if the relationship still makes sense.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>An administrator can approve any side of any request, which is the unblocking route when a
+    steward is unavailable.</p>
+
+    <div class="note warn">
+      <div class="note-title">Known gap: the second side is approved through the API, not the screen</div>
+      <p>The change-request page shows Approve and Reject only while a request is
+      <code>submitted</code> or <code>under_review</code>, and only to a steward of the <em>target</em>
+      type — which for a relationship request is the type at the <em>from</em> end. So once a request
+      reaches <code>partially_approved</code>, and for the steward of the <em>to</em> end, the buttons do
+      not appear even though that person is entitled to decide.</p>
+      <p>The API accepts it correctly. Until the screen catches up, the second side approves with:</p>
+      <pre><code>PUT /api/assets/change-requests/{id}/review
+{ "cr_status": "approved", "review_comments": "Agreed from the dataset side" }</code></pre>
+      <p>Everything downstream behaves normally: the edge goes live, the request moves to
+      <code>implemented</code>, and both objects' audit trails record it. An administrator using the
+      buttons is the other way round the problem.</p>
+    </div>
+
+    <h2 id="audit-reading">Reading the audit trail</h2>
+
+    <p>Every object's <strong>Audit</strong> tab lists what has happened to it, newest first, with a
+    count at the top. Each row shows when, who, the action, a human summary, and — the column people
+    overlook — <strong>how</strong>.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Chip in the "How" column</th><th>Means</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill muted">Direct</span></td><td>An ordinary edit made through the application by someone entitled to make it.</td></tr>
+        <tr><td><span class="pill ok">Approved change</span></td><td>Applied automatically when a change request was approved. The request's reference is linked next to it.</td></tr>
+        <tr><td><span class="pill warn">Administrator</span></td><td>An administrator acted without a change request. Legitimate, but never silently equivalent to an approved change.</td></tr>
+        <tr><td><span class="pill muted">System</span></td><td>Created by startup seeding.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Expand any <em>updated</em> row to see the before → after of every field in that edit. Fields that
+    were touched but did not actually change produce no row at all, so the history stays readable.</p>
+
+    <h3 id="audit-questions">Answering common audit questions</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Question</th><th>Where the answer is</th></tr></thead>
+      <tbody>
+        <tr><td>Who changed this field, and to what?</td><td>The object's Audit tab; expand the update row.</td></tr>
+        <tr><td>Was this approved, or did someone just do it?</td><td>The "How" column. An administrator bypass is visibly distinct.</td></tr>
+        <tr><td>Which prompt was live in March?</td><td>The prompt's Audit tab — the content hash is recorded before and after every edit.</td></tr>
+        <tr><td>When did this agent start using that knowledge base?</td><td>Either object's Audit tab; relationship changes are recorded against both endpoints.</td></tr>
+        <tr><td>Who approved this relationship, and when?</td><td>The change request linked from the audit row and from the edge's Source chip.</td></tr>
+        <tr><td>What has happened to a deleted object?</td><td>Audit rows survive the object. The record is still there even though the page is gone.</td></tr>
+        <tr><td>What changed across the whole estate this quarter?</td><td>Not a single screen today — this is a known gap. Per-object history is complete; an estate-wide activity feed is on the roadmap.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="role-reader">If you only read the catalog</h2>
+
+    <p>Your whole toolkit is search, detail pages, the graph and change requests.</p>
+
+    <ul>
+      <li>Start from search, not the sidebar. Paste a reference number, or type a name badly.</li>
+      <li>On an object you care about, read the Overview, then the Relationships tab — the relationships
+      usually say more about what something <em>is</em> than its fields do.</li>
+      <li>When something is wrong or missing, raise a change request. Say what should change and to what.
+      That is the supported route, not a nuisance.</li>
+      <li>Export anything you need outside the tool; you do not need permission for that.</li>
+    </ul>
+
+    <h2 id="role-steward">If you are a steward</h2>
+
+    <p>A weekly rhythm that keeps a catalog honest:</p>
+
+    <ol class="steps">
+      <li><strong>Clear your queue.</strong> Search <code>type:cr status:submitted</code> and decide
+      anything targeting your types. A request waiting a week teaches people not to raise them.</li>
+      <li><strong>Check for pending relationships on your side.</strong> Those are edges someone else
+      proposed that are sitting dimmed on your objects.</li>
+      <li><strong>Look for thin records.</strong> Objects in your types with no owner, no classification
+      or no description. Fill them in, or ask whoever knows.</li>
+      <li><strong>Look for disconnected records.</strong> An object with no relationships is an
+      inventory row, not a catalog entry. Ask what it is derived from, what governs it, what it feeds.</li>
+      <li><strong>Sweep obsolete entries.</strong> <code>status:obsolete</code> plus your type; retire or
+      delete what is genuinely gone.</li>
+    </ol>
+
+    <h2 id="role-admin">If you are an administrator</h2>
+
+    <ul>
+      <li><strong>Keep every type staffed.</strong> An unstaffed type is administrator-only, and it
+      silently blocks non-administrators from relating anything to it. This is the single most common
+      cause of "I got a 403 and I do not know why".</li>
+      <li><strong>Use your bypass sparingly.</strong> You can add relationships and edit anything
+      directly, and every one of those actions is tagged as an administrator bypass in the audit trail.
+      That is fine for unblocking; it is not a way of working.</li>
+      <li><strong>Unblock stalled requests</strong> by approving the waiting side yourself when a steward
+      is away.</li>
+      <li><strong>Review accounts periodically.</strong> Deactivate leavers — an inactive account is
+      refused at sign-in while its history stays intact.</li>
+      <li><strong>Passwords are set once from the interface.</strong> There is no password field on the
+      edit form and no reset flow yet. On a <em>deployment</em> the escape hatch is
+      <code>./dgp passwd someone@example.com</code>; on the development stack, recreate the account.
+      Nobody can read an existing password — they are bcrypt hashes.</li>
+      <li><strong>Watch the startup log after any schema change.</strong> The application refuses to boot
+      on an inconsistent facet registry, and the message names the problem precisely.</li>
+    </ul>
+
+    <p>And the operational half of the job, if you are also the person who runs the server:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>When</th><th>Do</th><th>Looking for</th></tr></thead>
+      <tbody>
+        <tr><td>Daily</td><td><code>./dgp status</code></td><td>Both services UP and the application <code>ready</code>, not merely listening.</td></tr>
+        <tr><td>Daily</td><td><code>grep -i error var/log/app.log | tail -40</code></td><td>Tracebacks, repeated 500s, database connection errors.</td></tr>
+        <tr><td>Daily</td><td><code>./dgp backup</code></td><td>A dump in <code>var/backups</code>. <strong>Copy it off the machine</strong> — a backup beside the database it protects is not a backup.</td></tr>
+        <tr><td>Weekly</td><td><code>./dgp doctor</code> and <code>./dgp stats</code></td><td>Everything at once; growth, and anything unexpectedly empty.</td></tr>
+        <tr><td>Weekly</td><td>Prune <code>var/backups</code></td><td>Nothing prunes it for you.</td></tr>
+        <tr><td>Before any upgrade</td><td><code>./dgp backup</code>, then <code>./dgp rebuild</code></td><td>There is no migration tool yet; the schema reconciles itself at startup, which handles additions well and not rewrites.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Full detail — including
+    <a href="install.html#checking-prod">how to check each service</a>,
+    <a href="install.html#logs">where every log is</a>,
+    <a href="install.html#backup">backup and restore</a>,
+    <a href="install.html#https">HTTPS</a> and
+    <a href="install.html#autostart">starting at login</a> — is on the
+    <a href="install.html">install and operate</a> page.</p>
+
+    <h2 id="role-ai">If you run AI governance</h2>
+
+    <p>A review pass that uses the catalog as it was designed to be used:</p>
+
+    <ol class="steps">
+      <li><strong>Unassessed risk.</strong> Search <code>type:agent unassessed</code>, then the other
+      seven AI types. Anything still unassessed has not been looked at.</li>
+      <li><strong>Autonomy and authority.</strong> <code>type:agent autonomous</code> and
+      <code>type:agent service_account</code>. Cross-check each against its application's human-oversight
+      text — an autonomous agent whose application describes no oversight mechanism is a finding.</li>
+      <li><strong>Untrusted servers in use.</strong> <code>type:mcp quarantined</code> and
+      <code>type:mcp unknown</code>; open each and look at the incoming "Used by agent" edges. A
+      quarantined server with live consumers is the one to act on today.</li>
+      <li><strong>Dangerous tool shapes.</strong> Tools with destructive and open-world hints set, bound
+      to autonomous agents. The graph from the tool at depth 1 shows the consumers.</li>
+      <li><strong>Residency and retention.</strong> Every endpoint: check data residency against where
+      you are allowed to send data, and prompt retention days against what you told customers.</li>
+      <li><strong>Classification ceilings.</strong> For each endpoint, compare its approved data
+      classification against the classification of the data the agents invoking it actually reach —
+      follow the knowledge-base and tool edges, do not take the agent's own field on trust.</li>
+      <li><strong>PII in the wrong places.</strong> Knowledge bases with <code>contains_pii</code> set,
+      and prompts with <code>contains_pii</code> or <code>contains_secrets</code> set. The second is
+      always a finding.</li>
+      <li><strong>Unreviewed prompts.</strong> Prompt templates with no reviewer and no review date, and
+      any whose approval status is still draft while the agent using them is live.</li>
+      <li><strong>Model card gaps.</strong> Models with no intended use, limitations or known bias.</li>
+      <li><strong>Write the findings back.</strong> Create the policies, attach them with
+      <em>Governs</em> edges, create the metrics that will measure the gap closing, and raise change
+      requests for the fixes. Then the next review starts from the catalog rather than from scratch.</li>
+    </ol>
+
+    <h2 id="hygiene">Catalog hygiene</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Do</th><th>Because</th></tr></thead>
+      <tbody>
+        <tr><td>Name things the way people say them</td><td>Search weights names highest, and a catalog nobody can search is a database.</td></tr>
+        <tr><td>Set classification at the attribute level, not just the dataset</td><td>That is the level the AI exposure question is answered at.</td></tr>
+        <tr><td>Prefer a relationship over a free-text field naming another object</td><td>A "source system" text box cannot be followed, impact-analysed or graphed.</td></tr>
+        <tr><td>Use notes on relationships</td><td>Six months later, "why does this edge exist?" has no other answer.</td></tr>
+        <tr><td>Retire rather than delete when something had history</td><td>Deleting removes the page; setting it obsolete keeps it findable and explains itself.</td></tr>
+        <tr><td>Keep the two statuses distinct</td><td>Lifecycle status is about the catalog entry; policy, project, execution and approval statuses are about the thing itself.</td></tr>
+        <tr><td>Register new MCP servers as quarantined</td><td>Unknown means nobody looked; quarantined means somebody decided not yet.</td></tr>
+        <tr><td>Record resolved versions on models</td><td>It is the only way to answer "which build was live" later.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h2 id="operating">Starting, stopping and logs</h2>
+
+    <p>Which commands you use depends on which stack you are on — and the quickest way to tell is
+    whether the directory has a <code>.env</code> (a deployment) or only <code>.env.development</code>
+    (development). The <a href="install.html">install and operate guide</a> covers both in full; this is
+    the short version.</p>
+
+    <h3 id="operating-dev">Development — three processes</h3>
+
+<pre><code>services/all.sh start        # postgres → backend → frontend
+services/all.sh status       # up/down, pid, port, health check for each
+services/all.sh logs         # tail backend and frontend together
+services/all.sh stop         # frontend → backend → postgres
+
+services/backend.sh restart          # one service at a time
+DG_RELOAD=1 services/backend.sh restart   # backend with hot reload
+</code></pre>
+
+    <p><code>start</code> is idempotent — if it is already up, it says so and exits cleanly. Each script
+    finds its service by port as well as by pidfile, so it can stop a server you started by hand in
+    another terminal. Backend and frontend logs are under <code>services/logs/</code>; PostgreSQL keeps
+    using Homebrew's own log so its history stays in one place. Ports come from <code>PG_PORT</code>,
+    <code>BACKEND_PORT</code> and <code>FRONTEND_PORT</code>, defaulting to 5432, 8000 and 3000.</p>
+
+    <h3 id="operating-deployed">A deployment — two processes</h3>
+
+<pre><code>./dgp status                 # both services, ports, pids, and whether it is *ready*
+./dgp start | stop | restart
+./dgp logs [app|postgres]    # follow the logs
+./dgp health                 # ask the running server for readiness and version
+./dgp doctor                 # the full check when something is wrong
+./dgp help                   # everything else
+</code></pre>
+
+    <p>There is <strong>no front-end process here</strong> — the interface is compiled into
+    <code>frontend/dist</code> and served by the same uvicorn that answers the API, on port 8080. So
+    "is the front end up?" becomes "is the build there, and is it being served?":
+    <code>curl -sI http://127.0.0.1:8080/</code> — a <code>200</code> means yes, a <code>503</code>
+    means there is no build and <code>./dgp rebuild</code> fixes it.</p>
+
+    <p>Read the last column of <code>./dgp status</code> rather than just UP or DOWN.
+    <em>serving but NOT ready</em> means the process is alive while the database is not answering —
+    the failure worth catching, and the reason liveness and readiness are separate questions. See
+    <a href="install.html#checking-prod">checking the services</a> for what each state means and what to
+    do about it.</p>
+
+    <div class="note warn">
+      <div class="note-title">If you registered PostgreSQL with brew services</div>
+      <p>launchd will restart it after <code>services/postgres.sh stop</code>. Run
+      <code>brew services stop postgresql@17</code> first — these scripts drive Postgres with
+      <code>pg_ctl</code>, not through brew services. This affects the development stack only; a
+      deployment's cluster is its own and was never registered with anything.</p>
+    </div>
+
+    <div class="note">
+      <div class="note-title">The two script directories are not interchangeable</div>
+      <p><code>services/</code> drives the development stack (5432 / 8000 / 3000);
+      <code>deploy/</code>, through <code>./dgp</code>, drives a deployment (55432 / 8080). They share
+      filenames and verbs deliberately, and they act on <em>different databases</em>. Running the wrong
+      one is the usual reason <code>status</code> reports DOWN for something you know is up.</p>
+    </div>
+
+    <h2 id="faq">Troubleshooting and FAQ</h2>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Symptom</th><th>Cause and fix</th></tr></thead>
+      <tbody>
+        <tr><td><strong>There is no Create button on a list page</strong></td><td>You are not an administrator and do not hold that type's steward role. Check the user menu; ask an administrator to assign it.</td></tr>
+        <tr><td><strong>I cannot find the Policy, Metric or AI steward roles in the person form</strong></td><td>The picker currently lists only six of the sixteen. The rest are assignable through <code>PUT /api/users/{id}</code> with a <code>steward_facets</code> array; they work identically once set.</td></tr>
+        <tr><td><strong>Approve and Reject are missing on a change request</strong></td><td>You do not steward the target's type, or the request has already been decided. Administrators can always decide.</td></tr>
+        <tr><td><strong>"No steward is assigned for X, so this relationship can only be added by an administrator"</strong></td><td>Exactly what it says: nobody could approve your side. Have an administrator assign a steward for that type, or add the relationship themselves.</td></tr>
+        <tr><td><strong>"This change request is waiting on a steward of: …"</strong></td><td>You already decided your side, or you steward none of the outstanding ones. The message names which type is holding it up.</td></tr>
+        <tr><td><strong>The relationship I want is not in the list</strong></td><td>You are on the wrong end of it. The picker only offers kinds where the current object is the source — try the other object. If neither offers it, that pair has no type defined; custom relationship types are on the roadmap.</td></tr>
+        <tr><td><strong>"That relationship already exists" / "is already awaiting approval"</strong></td><td>The edge, or its mirror image for a symmetric type, is already recorded. Check the Relationships tab, including dimmed pending rows.</td></tr>
+        <tr><td><strong>"An object cannot relate to itself"</strong></td><td>Source and target are the same object. For a genuine hierarchy, use the parent field on the edit form.</td></tr>
+        <tr><td><strong>A relationship request was refused on approval with a conflict</strong></td><td>One of the two objects was deleted, or something else changed, while the request waited. Nothing was recorded as done that was not done. Re-raise it if it still applies.</td></tr>
+        <tr><td><strong>Search finds nothing for an obvious word</strong></td><td>Fewer than two characters returns nothing. Otherwise check for a <code>type:</code> token you left in the box — an unrecognised one shows a warning banner naming it.</td></tr>
+        <tr><td><strong>"No exact match — showing closest matches"</strong></td><td>Nothing matched on words or reference number, so everything shown came from fuzzy similarity. Usually a spelling difference, occasionally a genuinely absent object.</td></tr>
+        <tr><td><strong>A dataset will not save</strong></td><td>It needs a system. Likewise an attribute needs a dataset and an endpoint needs a model. Create the parent first.</td></tr>
+        <tr><td><strong>I cleared a field but it came back</strong></td><td>An update leaves out untouched fields rather than nulling them. To genuinely empty a field, save it as blank.</td></tr>
+        <tr><td><strong>Export gives a file with one "No Results" sheet</strong></td><td>The search matched nothing. Widen it or drop a filter.</td></tr>
+        <tr><td><strong>MCP launch command and env vars are missing from the export</strong></td><td>Deliberate. Both are excluded from every export because they attract pasted credentials.</td></tr>
+        <tr><td><strong>The graph looks empty or truncated</strong></td><td>Empty means no relationships and no children yet. Truncated means the node cap was reached — lower the depth, or start from a more specific object.</td></tr>
+        <tr><td><strong>I was signed out mid-task</strong></td><td>Tokens last eight hours; any 401 clears the session. Sign back in — nothing you had saved is lost.</td></tr>
+        <tr><td><strong>"Account is inactive" at sign-in</strong></td><td>An administrator set the account inactive. Ask them to reactivate it.</td></tr>
+        <tr><td><strong>I forgot a password</strong></td><td>There is no reset flow in the interface yet, and nobody can read an existing password — they are bcrypt hashes. On a deployment an administrator runs <code>./dgp passwd &lt;email&gt;</code>; on the development stack they recreate the account.</td></tr>
+        <tr><td><strong>The backend will not start and says the facet registry is inconsistent</strong></td><td>That guard is intentional and the message names the exact problem. It follows a change to an object type's definition; fix what it names.</td></tr>
+        <tr><td><strong>The frontend will not start, port in use</strong></td><td>The dev server uses a strict port, so it fails loudly rather than moving. Free port 3000 or set <code>FRONTEND_PORT</code>.</td></tr>
+        <tr><td><strong>The dashboard counts look stale</strong></td><td>They are fetched on load. Refresh the page.</td></tr>
+        <tr><td><strong>The page loads but every panel is empty or errors</strong></td><td>The application is serving while the database is not answering. <code>./dgp status</code> — if it says <em>serving but NOT ready</em>, check <code>./dgp logs postgres</code>.</td></tr>
+        <tr><td><strong>The site answers 503 "The user interface has not been built"</strong></td><td>A deployment with no <code>frontend/dist</code>. <code>./dgp rebuild</code>. The API is unaffected.</td></tr>
+        <tr><td><strong>Anything about installing, ports, logs, services or backups</strong></td><td>See <a href="install.html#install-faq">install troubleshooting</a>.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 id="faq-general">Questions people ask</h3>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+      <tbody>
+        <tr><td>Can I bulk import from a CSV?</td><td>Not yet — it is on the roadmap. Today it is the UI or the API. Export works already.</td></tr>
+        <tr><td>Can I add my own relationship type?</td><td>Not from the interface yet. The catalogue is a database table designed for it, so it is a small change rather than an architectural one.</td></tr>
+        <tr><td>Can DataGovern scan my repository and fill the AI catalog in?</td><td>Not yet. The columns a scanner needs are already on every AI object type, waiting. The design is in <code>ai-scanner-design.md</code>.</td></tr>
+        <tr><td>Can I record a metric's value over time?</td><td>No — the catalog defines metrics; it does not store readings. Also on the roadmap.</td></tr>
+        <tr><td>Can stewardship be per object rather than per type?</td><td>Not yet. Today a steward holds a whole type.</td></tr>
+        <tr><td>Where is the API documentation?</td><td><code>/docs</code> on whichever port the backend is on — <code>localhost:8000</code> in development, <code>127.0.0.1:8080</code> on a deployment — plus a summary in the <a href="features.html#api">feature reference</a>.</td></tr>
+        <tr><td>Can I delete a relationship type?</td><td>No. Seeded types may be relabelled — and your wording survives restarts — but never deleted, because edges point at them.</td></tr>
+        <tr><td>Is anything sent outside my machine?</td><td>No. It is your browser, your backend and your PostgreSQL.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="pagenav">
+      <a href="features.html"><span class="kicker">Reference</span><strong>← Feature reference</strong>
+      Every object type, field, enum and relationship.</a>
+      <a href="install.html"><span class="kicker">Operate</span><strong>← Install &amp; operate</strong>
+      Installing it, checking the services, logs, backups and administration.</a>
+    </div>
+
+    <div class="footer">
+      <span>DataGovern — usage guide.</span>
+      <span>Written against the Phase&nbsp;1 catalog.</span>
+    </div>
+
+  </main>
+
+  <nav class="toc" aria-label="On this page"></nav>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>
