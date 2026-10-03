@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Features — DataGovern Documentation</title>
-<meta name="description" content="Complete feature reference for DataGovern: every object type field by field, every enum, all 141 relationship types, search scoring, approvals, audit and the API surface.">
+<title>Features — DataMind Twinfold</title>
+<meta name="description" content="Complete feature reference for DataMind Twinfold: every object type field by field, every enum, all 141 relationship types, search scoring, approvals, audit and the API surface.">
 <link rel="stylesheet" href="assets/docs.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
 </head>
@@ -12,13 +12,12 @@
 
 <header class="topbar">
   <button class="icon-btn menu-btn" data-menu-toggle aria-expanded="false" aria-label="Open navigation">☰</button>
-  <a class="brand" href="index.html"><span class="mark">DG</span> DataGovern <small>Documentation</small></a>
+  <a class="brand" href="index.html"><span class="mark">DT</span> DataMind Twinfold <small>Documentation</small></a>
   <nav class="topnav">
     <a href="index.html">Overview</a>
     <a href="install.html">Install &amp; operate</a>
     <a href="features.html" aria-current="page">Features</a>
     <a href="usage.html">Using the product</a>
-    <a href="../README.md">README</a>
     <button class="icon-btn" data-theme-toggle type="button">☾</button>
   </nav>
 </header>
@@ -384,7 +383,7 @@
     </div>
 
     <p>One agreed definition of a measure, so two teams cannot quote the same number differently. This
-    is also how AI evaluation works in DataGovern with no extra object type: an eval score, a benchmark,
+    is also how AI evaluation works here with no extra object type: an eval score, a benchmark,
     a latency budget, a cost ceiling and a drift monitor are all Metrics — they have a calculation, a
     target, warning and critical thresholds and a direction of good — related to the AI object they
     score.</p>
@@ -1346,12 +1345,46 @@ type:mcp status:active     a filter with no search text is fine
 
     <h2 id="api">API surface</h2>
 
-    <p>Everything the interface does is a documented HTTP endpoint. With the backend running, the
-    interactive Swagger UI is at <code>http://localhost:8000/docs</code> on the development stack, and
-    at <code>/docs</code> on the application's own port — <code>http://127.0.0.1:8080/docs</code> by
-    default — on a deployment, where <code>DGP_DOCS_ENABLED</code> can switch it off. All endpoints require a bearer
-    token except <code>/api/auth/login</code>, <code>/api/auth/register</code> and
-    <code>/api/health</code>.</p>
+    <p>Everything the interface does is a documented HTTP endpoint — <strong>104 operations across 53
+    paths</strong>, served by the same process that serves the interface. Three renderings of the same
+    specification are exposed on the application's own port, which is
+    <code>http://127.0.0.1:8080</code> by default:</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Path</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td><code>/docs</code></td><td><strong>Swagger UI</strong> — interactive: expand an endpoint, fill the fields, send a real request. Authorise once with a bearer token and it is attached to everything you try.</td></tr>
+        <tr><td><code>/redoc</code></td><td>ReDoc — the same specification as a single readable reference page. Better for reading, not interactive.</td></tr>
+        <tr><td><code>/openapi.json</code></td><td>The raw OpenAPI document, for generating a client or importing into Postman or Insomnia.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>All three are controlled by one setting, <code>DGP_DOCS_ENABLED</code>. It defaults to
+    <code>true</code>, the installer asks about it, and setting it to <code>false</code> does not merely
+    hide the pages — the routes are never registered, so all three answer <code>404</code>. Turn it off
+    on an installation reachable from a network you do not control: the specification is an accurate
+    description of the attack surface.</p>
+
+    <p>Exactly five operations need no bearer token — <code>POST /api/auth/login</code>,
+    <code>POST /api/auth/register</code>, <code>GET /api/health</code>,
+    <code>GET /api/health/ready</code> and <code>GET /api/version</code>. Every other endpoint requires
+    one and re-checks the caller's permission itself.</p>
+
+    <div class="note danger">
+      <div class="note-title">Self-registration is open, and it honours the role in the request</div>
+      <p><code>POST /api/auth/register</code> needs no token and accepts <code>role</code> and
+      <code>steward_facets</code> from the request body. Anyone who can reach the application's port can
+      therefore create an account with any role, <strong>including administrator</strong> — no invitation
+      and no approval. On a default install that is only whoever can already reach
+      <code>127.0.0.1</code>; it becomes a serious exposure the moment <code>DGP_HOST</code> is set to
+      <code>0.0.0.0</code>.</p>
+      <p>Until the endpoint is restricted, treat a network-reachable installation as needing something
+      in front of it that requires authentication before <code>/api/auth/register</code> is reachable —
+      a reverse proxy rule blocking that one path is enough, since every account an administrator
+      actually needs is created through People → Add in the interface.</p>
+    </div>
 
     <p><code>{facet}</code> below is any of: <code>systems</code>, <code>datasets</code>,
     <code>attributes</code>, <code>glossaries</code>, <code>projects</code>, <code>processes</code>,
@@ -1431,7 +1464,7 @@ type:mcp status:active     a filter with no search text is fine
     </div>
 
     <div class="footer">
-      <span>DataGovern — feature reference.</span>
+      <span>DataMind Twinfold — feature reference.</span>
       <span>Matches the Phase&nbsp;1 catalog: 17 object types, 141 relationship types.</span>
     </div>
 

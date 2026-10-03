@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DataGovern Documentation</title>
-<meta name="description" content="Documentation for DataGovern — an open-source governance catalog for business data assets and AI assets.">
+<title>DataMind Twinfold</title>
+<meta name="description" content="Documentation for DataMind Twinfold — a governance catalog for business data assets and AI assets, and the guide to installing and operating it.">
 <link rel="stylesheet" href="assets/docs.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
 </head>
@@ -12,13 +12,12 @@
 
 <header class="topbar">
   <button class="icon-btn menu-btn" data-menu-toggle aria-expanded="false" aria-label="Open navigation">☰</button>
-  <a class="brand" href="index.html"><span class="mark">DG</span> DataGovern <small>Documentation</small></a>
+  <a class="brand" href="index.html"><span class="mark">DT</span> DataMind Twinfold <small>Documentation</small></a>
   <nav class="topnav">
     <a href="index.html" aria-current="page">Overview</a>
     <a href="install.html">Install &amp; operate</a>
     <a href="features.html">Features</a>
     <a href="usage.html">Using the product</a>
-    <a href="../README.md">README</a>
     <button class="icon-btn" data-theme-toggle type="button">☾</button>
   </nav>
 </header>
@@ -27,21 +26,21 @@
 
   <aside class="sidebar">
     <h4>Start here</h4>
-    <a href="#what">What DataGovern is</a>
+    <a href="#what">What DataMind Twinfold is</a>
     <a href="#problem">The problem it solves</a>
     <a href="#catalogs">The two catalogs</a>
     <a href="#concepts">Core concepts</a>
     <a href="#lifecycle">The life of an object</a>
     <a href="#roles">Who does what</a>
     <a href="#architecture">How it is put together</a>
-    <a href="#running">Running and deploying it</a>
+    <a href="#running">Running it</a>
     <a href="#map">Documentation map</a>
     <a href="#glossary">Glossary</a>
 
     <h4>Install &amp; operate</h4>
     <a href="install.html">Installation guide</a>
     <a href="install.html#prod-architecture">Deployed architecture</a>
-    <a href="install.html#vite">Where Vite went</a>
+    <a href="install.html#no-node">No Node at runtime</a>
     <a href="install.html#checking-prod">Checking the services</a>
     <a href="install.html#logs">Where every log is</a>
     <a href="install.html#admin-daily">Administration</a>
@@ -69,7 +68,7 @@
   <main class="content">
 
     <div class="hero">
-      <h1>DataGovern documentation</h1>
+      <h1>DataMind Twinfold documentation</h1>
       <p class="lede">An open-source governance catalog for two kinds of asset that used to live in
       different spreadsheets: the <strong>business data assets</strong> an organisation runs on, and the
       <strong>AI assets</strong> — agents, models, endpoints, knowledge bases, MCP servers, tools and
@@ -101,9 +100,9 @@
       </a>
     </div>
 
-    <h2 id="what">What DataGovern is</h2>
+    <h2 id="what">What DataMind Twinfold is</h2>
 
-    <p>DataGovern is a web application that keeps a single, searchable, governed inventory of the
+    <p>DataMind Twinfold is a web application that keeps a single, searchable, governed inventory of the
     things an organisation's data estate is made of, and of the AI that operates on it. It is inspired
     by the commercial governance suites — Informatica CDGC, Collibra, Axon, Enterprise Data Catalog —
     with an AI catalog modelled on OpenMetadata 2.0 and Collibra AI Governance,
@@ -131,7 +130,7 @@
     we running?" from a spreadsheet, and cannot join the two. The question that actually matters —
     <em>which AI systems can reach regulated data, and under whose authority?</em> — falls in the gap.</p>
 
-    <p>DataGovern closes it by making the AI objects first-class catalog entries and giving them edges
+    <p>DataMind Twinfold closes it by making the AI objects first-class catalog entries and giving them edges
     into the data catalog. Because a knowledge base records the datasets it <em>indexes</em>, and a tool
     records the tables it <em>reads from</em>, and an agent records the knowledge bases it
     <em>retrieves from</em>, the answer is a graph walk rather than a week of log archaeology:</p>
@@ -337,38 +336,30 @@
 
     <h2 id="architecture">How it is put together</h2>
 
-    <p>The same three technologies are arranged two different ways, depending on whether you are
-    developing or running a deployment. <strong>Development</strong> — three processes, so the code can
-    reload as you type:</p>
+    <p>Three technologies, two processes, one directory. The browser talks to one server, and that
+    server talks to a PostgreSQL cluster that belongs to the installation:</p>
 
     <div class="flow">
-      <span class="box">React + Vite&nbsp;:3000</span><span class="arrow">— /api proxy →</span>
-      <span class="box">FastAPI + uvicorn&nbsp;:8000</span><span class="arrow">— SQLAlchemy →</span>
-      <span class="box">PostgreSQL&nbsp;:5432</span>
-    </div>
-
-    <p><strong>Deployed</strong> — two processes. Vite becomes a build step rather than a server: the
-    compiled interface is served by the same uvicorn that answers the API, on one port and one origin,
-    against a PostgreSQL cluster that belongs to the installation:</p>
-
-    <div class="flow">
+      <span class="box">Browser</span><span class="arrow">→</span>
       <span class="box">uvicorn&nbsp;:8080 &nbsp;(<code>/</code> = built UI, <code>/api</code> = API)</span><span class="arrow">— SQLAlchemy →</span>
       <span class="box">PostgreSQL&nbsp;:55432</span>
     </div>
 
-    <p>Nothing in <code>frontend/src</code> differs between them — it calls <code>/api/…</code>
-    relatively either way. The <a href="install.html#prod-architecture">deployed architecture</a> is
-    explained in full on the installation page, including
-    <a href="install.html#vite">what happens to Vite</a>.</p>
+    <p>There is nothing between the browser and the application — no separate web server, no reverse
+    proxy, and <strong>no Node process</strong>. The interface is React, compiled once at install time
+    into static files that the same uvicorn process serves at <code>/</code>. One port, one origin, so
+    there is no CORS to configure and TLS is terminated exactly once. The
+    <a href="install.html#prod-architecture">deployed architecture</a> is explained in full on the
+    installation page, including <a href="install.html#no-node">why no Node runs at runtime</a> and
+    <a href="install.html#one-request">a single request traced end to end</a>.</p>
 
     <dl class="kv">
-      <dt>Front end</dt><dd>React 19, TypeScript, Vite, Ant Design 6, React Router 7, axios. Cytoscape with a dagre layout for the relationship graph, lazily loaded so people who never open it never download it.</dd>
-      <dt>Back end</dt><dd>FastAPI, SQLAlchemy 2, Pydantic v2 / pydantic-settings, python-jose for JWT, bcrypt for password hashing, openpyxl for the Excel export. Python 3.12+.</dd>
-      <dt>Database</dt><dd>PostgreSQL with the <code>pg_trgm</code> extension, generated <code>tsvector</code> columns for full-text search, GIN indexes for both full text and trigram, and a per-table index on <code>upper(reference_number)</code>.</dd>
+      <dt>Front end</dt><dd>React 19, TypeScript, Ant Design 6, React Router 7, axios, bundled to static files. Cytoscape with a dagre layout for the relationship graph, lazily loaded so people who never open it never download it.</dd>
+      <dt>Back end</dt><dd>FastAPI, SQLAlchemy 2, Pydantic v2 / pydantic-settings, python-jose for JWT, bcrypt for password hashing, openpyxl for the Excel export. Python 3.12+, run by uvicorn with several workers.</dd>
+      <dt>Database</dt><dd>PostgreSQL 17 with the <code>pg_trgm</code> extension, generated <code>tsvector</code> columns for full-text search, GIN indexes for both full text and trigram, and a per-table index on <code>upper(reference_number)</code>. 26 tables.</dd>
       <dt>Authentication</dt><dd>JWT bearer tokens, HS256, valid for 480 minutes (8 hours). Passwords are stored as bcrypt hashes and are never readable by anyone, administrators included.</dd>
-      <dt>Schema management</dt><dd>Created and reconciled at startup. There is no migration tool yet: <code>create_all</code>, a schema-cleanup pass, and idempotent seeding of steward roles, the admin user and the relationship catalogue.</dd>
+      <dt>Schema management</dt><dd>Created and reconciled at startup, under an advisory lock so several workers cannot race. There is no migration tool yet: <code>create_all</code>, a schema-cleanup pass, and idempotent seeding of steward roles, the first administrator and the relationship catalogue.</dd>
     </dl>
-
     <h3 id="startup">What happens when the backend starts</h3>
 
     <ol class="steps">
@@ -389,127 +380,117 @@
       <li><strong>The audit listener is installed</strong> on the SQLAlchemy session.</li>
     </ol>
 
-    <h2 id="running">Running and deploying it</h2>
+    <h2 id="running">Running it</h2>
 
-    <p>Two ways, and they are deliberately separate stacks rather than one with a switch. Which
-    configuration file exists decides which you are in: <code>.env</code> means a deployment,
-    <code>.env.development</code> means development, and <strong>never both</strong> — so a production
-    machine cannot silently inherit a development default.</p>
+    <p>One command installs it, and one command operates it from then on. Both live in the installation
+    directory and act only on that installation.</p>
 
-    <h3 id="run-dev">Development — three processes</h3>
-
-<pre><code>services/all.sh start      # postgres → backend → frontend
-services/all.sh status     # up/down, pid, port, health check for each
-services/all.sh logs       # tail the backend and frontend logs
-services/all.sh stop       # frontend → backend → postgres
-</code></pre>
-
-    <p>Individual services take the same five verbs:
-    <code>services/backend.sh {start|stop|restart|status|logs}</code>. <code>start</code> is idempotent,
-    and each script finds its service by port as well as by pidfile, so it can stop a server you
-    launched by hand in another terminal. Ports come from <code>PG_PORT</code>,
-    <code>BACKEND_PORT</code> and <code>FRONTEND_PORT</code> if set, otherwise 5432 / 8000 / 3000.</p>
-
-    <div class="table-wrap">
-    <table>
-      <thead><tr><th>What</th><th>Where</th></tr></thead>
-      <tbody>
-        <tr><td>Application</td><td><code>http://localhost:3000</code></td></tr>
-        <tr><td>Interactive API docs (Swagger)</td><td><code>http://localhost:8000/docs</code></td></tr>
-        <tr><td>Health check</td><td><code>http://localhost:8000/api/health</code></td></tr>
-        <tr><td>Default sign-in</td><td><code>admin@datagovern.com</code> / <code>admin123</code></td></tr>
-      </tbody>
-    </table>
-    </div>
-
-    <h3 id="run-deployed">A deployment — one command, then two processes</h3>
+    <h3 id="run-install">Installing</h3>
 
 <pre><code>./install.sh               # ask a few questions, then do everything
-./dgp status               # is it running, and is it healthy
-./dgp start | stop | restart | logs
+</code></pre>
+
+    <p>The installer checks the prerequisites, generates a signing key and a database password, builds
+    the interface, creates <strong>its own PostgreSQL cluster inside the installation directory</strong>,
+    creates the database and schema, seeds the sixteen steward roles and the 141 relationship types,
+    creates the first administrator, starts the application — and then verifies the result by signing in
+    as that administrator and fetching the interface. Everything it owns is inside that one directory,
+    so deleting the directory removes the installation.</p>
+
+    <h3 id="run-operate">Operating</h3>
+
+<pre><code>./dgp status               # is it running, and is it healthy
+./dgp start | stop | restart
+./dgp logs [app|postgres]  # follow the logs
+./dgp health               # ask the running server: readiness and version
+./dgp doctor               # binaries, config, database, UI build — all at once
 ./dgp backup               # pg_dump into var/backups
+./dgp passwd &lt;email&gt;       # set a password (there is no UI for this yet)
 ./dgp help                 # everything else
 </code></pre>
 
-    <p>The installer creates its own PostgreSQL cluster inside the installation directory, builds the
-    interface, creates the schema, seeds the catalogue, and verifies the result by signing in as the
-    administrator it just created. Everything it owns is inside that one directory, so deleting the
-    directory removes the installation.</p>
-
     <div class="table-wrap">
     <table>
       <thead><tr><th>What</th><th>Where</th></tr></thead>
       <tbody>
-        <tr><td>Application — interface and API together</td><td><code>http://127.0.0.1:8080</code></td></tr>
+        <tr><td>Application — interface and API together</td><td><code>http://127.0.0.1:8080</code> (<code>8443</code> with HTTPS on)</td></tr>
+        <tr><td>Interactive API documentation</td><td><code>/docs</code> · <code>/redoc</code> · <code>/openapi.json</code>, unless <code>DGP_DOCS_ENABLED=false</code></td></tr>
         <tr><td>Liveness / readiness</td><td><code>/api/health</code> · <code>/api/health/ready</code></td></tr>
-        <tr><td>PostgreSQL (this install's own cluster)</td><td><code>127.0.0.1:55432</code></td></tr>
+        <tr><td>PostgreSQL (this install's own cluster)</td><td><code>127.0.0.1:55432</code>, loopback only</td></tr>
+        <tr><td>Configuration</td><td><code>.env</code> in the installation directory, mode <code>600</code></td></tr>
+        <tr><td>Logs, backups, the cluster</td><td><code>var/log</code> · <code>var/backups</code> · <code>var/postgres</code></td></tr>
         <tr><td>Sign-in</td><td>Set at install time, recorded in <code>.env</code></td></tr>
       </tbody>
     </table>
     </div>
 
-    <p>Neither set of ports overlaps the other, so a development stack and a deployment can run side by
-    side on the same machine.</p>
-
     <div class="note danger">
-      <div class="note-title">Change the seeded administrator before anyone else uses this</div>
-      <p>The <code>admin@datagovern.com</code> / <code>admin123</code> account is a <em>development</em>
-      default that exists so a fresh database is usable, and its credentials are in the source. A
-      deployment never uses it — the installer asks you for a password or generates one. On any shared
-      development instance, create a real administrator, sign in as them, and deactivate the seeded one.
-      The same goes for the signing key: the committed development key is refused in production by
-      digest.</p>
+      <div class="note-title">If the installer generated your administrator password, change it</div>
+      <p>A generated password is printed once in the installer's summary and written to
+      <code>.env</code> in clear, because the file is written before the account exists. Sign in, run
+      <code>./dgp passwd &lt;email&gt;</code> to set one you chose, and then blank
+      <code>DGP_ADMIN_PASSWORD</code> — it is read <em>only</em> to seed the first administrator when no
+      administrator exists, so removing it changes nothing about how the platform runs. Create a second
+      administrator too, so one locked-out account is not a crisis.</p>
     </div>
 
     <div class="note ok">
       <div class="note-title">The full installation and operations guide</div>
-      <p><a href="install.html">Install &amp; operate</a> covers all of it: prerequisites, the
-      installer's flags and steps, what lands on disk, every configuration setting, and the
-      administrator's reference —
-      <a href="install.html#checking-prod">how to check the PostgreSQL, backend and front-end services</a>,
+      <p><a href="install.html">Install &amp; operate</a> covers all of it: the deployed architecture,
+      prerequisites, the installer's questions, flags and steps, what lands on disk, every configuration
+      setting, and the administrator's reference —
+      <a href="install.html#checking-prod">how to check both services</a>,
       <a href="install.html#logs">where every log is</a>,
+      <a href="install.html#health">the health endpoints</a>,
       <a href="install.html#backup">backup and restore</a>,
       <a href="install.html#https">HTTPS</a>,
       <a href="install.html#autostart">starting at login</a> and
       <a href="install.html#install-faq">troubleshooting</a>.</p>
     </div>
-
     <h2 id="map">Documentation map</h2>
 
-    <p>These pages are the end-user documentation. The repository root carries the rest.</p>
+    <p>These four pages are the whole of the documentation. Everything else an operator needs is
+    inside the installation itself, and every one of those answers <code>--help</code>.</p>
 
     <div class="table-wrap">
     <table>
       <thead><tr><th>Document</th><th>Written for</th><th>What is in it</th></tr></thead>
       <tbody>
-        <tr><td><strong>docs/index.html</strong> <span class="pill ok">you are here</span></td><td>Everyone</td><td>What the product is, the concepts, how the pieces fit, where to go next</td></tr>
-        <tr><td><strong><a href="install.html">docs/install.html</a></strong></td><td>Whoever installs and runs it</td><td>Prerequisites, the installer, the deployed architecture, configuration, and the administrator's reference — checking each service, logs, health, backups, HTTPS, autostart, troubleshooting</td></tr>
-        <tr><td><strong><a href="features.html">docs/features.html</a></strong></td><td>Evaluators, stewards, governance leads</td><td>Every capability in detail — every object type field by field, every enum, every relationship type, search scoring, approvals, audit, API surface</td></tr>
-        <tr><td><strong><a href="usage.html">docs/usage.html</a></strong></td><td>Anyone using the product</td><td>Task-by-task guide — setup, cataloguing, relating, searching, exporting, reviewing, auditing, per-role routines, troubleshooting</td></tr>
-        <tr><td><a href="../README.md">README.md</a></td><td>Users and evaluators</td><td>Install, run, and a narrative tour of the platform</td></tr>
-        <tr><td><a href="../DEVELOPER.md">DEVELOPER.md</a></td><td>Contributors</td><td>Architecture, every file's responsibility, schema, full API reference, how to add a facet</td></tr>
-        <tr><td><a href="../TECHNICAL_GUIDE.md">TECHNICAL_GUIDE.md</a></td><td>Anyone new to web development</td><td>Every concept used here explained from zero, plus end-to-end traces of what happens on a click</td></tr>
-        <tr>
-            <td><a href="../AI_cataloging_idea.md"><code>AI_cataloging_idea.md</code></a></td>
-            <td>Anyone asking "why these facets?"</td>
-            <td>The metamodel survey the AI catalog was designed from — OpenMetadata&nbsp;2.0 and Collibra — and the standards it aligns with</td>
-          </tr>
-          <tr><td><a href="../ai-catalog-design.md">ai-catalog-design.md</a></td><td>Designers of the AI metamodel</td><td>Which facets, which fields, which edges, and why</td></tr>
-        <tr><td><a href="../ai-catalog-implementation-plan.md">ai-catalog-implementation-plan.md</a></td><td>Implementers</td><td>What was built, what deliberately was not, what each increment costs</td></tr>
-        <tr><td><a href="../ai-scanner-design.md">ai-scanner-design.md</a></td><td>Phase 2</td><td>How a folder of code becomes catalog metadata — identity, extraction, reconciliation, limits</td></tr>
-        <tr><td><a href="../CLAUDE.md">CLAUDE.md</a></td><td>The project itself</td><td>Running development log: decisions, bugs, what is next</td></tr>
-          <tr>
-            <td><a href="../services/README.md"><code>services/README.md</code></a></td>
-            <td>Anyone running it</td>
-            <td>The <strong>development</strong> start/stop/restart scripts: what each one does, the ports and overrides, and why <code>brew services</code> is deliberately not used</td>
-          </tr>
-          <tr>
-            <td><code>install.sh</code> · <code>dgp</code> · <code>build.sh</code></td>
-            <td>Whoever deploys it</td>
-            <td>The installer, the operator command and the release build. All three take <code>--help</code>; <a href="install.html">install.html</a> is the prose version</td>
-          </tr>
+        <tr><td><strong>index.html</strong> <span class="pill ok">you are here</span></td><td>Everyone</td><td>What the product is, the concepts, how the pieces fit, where to go next</td></tr>
+        <tr><td><strong><a href="install.html">install.html</a></strong></td><td>Whoever installs and runs it</td><td>Prerequisites, the installer, the deployed architecture, configuration, and the administrator&rsquo;s reference &mdash; checking each service, logs, health, backups, HTTPS, autostart, troubleshooting</td></tr>
+        <tr><td><strong><a href="features.html">features.html</a></strong></td><td>Evaluators, stewards, governance leads</td><td>Every capability in detail &mdash; every object type field by field, every enum, every relationship type, search scoring, approvals, audit, API surface</td></tr>
+        <tr><td><strong><a href="usage.html">usage.html</a></strong></td><td>Anyone using the product</td><td>Task-by-task guide &mdash; setup, cataloguing, relating, searching, exporting, reviewing, auditing, per-role routines, troubleshooting</td></tr>
       </tbody>
     </table>
+    </div>
+
+    <h3 id="map-install">In the installation directory</h3>
+
+    <p>An installation is eleven entries, and six of them document it. These are files on the
+    machine, not links &mdash; open them where it is installed.</p>
+
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>In the install</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td><code>README.md</code></td><td>The release&rsquo;s own README: what this folder is, install it, run it, operate it, upgrade it. Written for whoever received the release</td></tr>
+        <tr><td><code>.env.example</code></td><td>Every setting with its default, commented section by section &mdash; what each group controls, and the traps (worker count against PostgreSQL&rsquo;s <code>max_connections</code>, binding to <code>0.0.0.0</code> without TLS). The reference for the <code>.env</code> the installer wrote</td></tr>
+        <tr><td><code>./install.sh --help</code></td><td>The installer&rsquo;s own flag reference &mdash; ports, bind address, HTTPS, workers, unattended installs. <a href="install.html#install">install.html</a> is the prose version</td></tr>
+        <tr><td><code>./dgp help</code></td><td>Every operator command. <a href="install.html#dgp">install.html</a> explains each one and when you would reach for it</td></tr>
+        <tr><td><code>deploy/*.sh</code></td><td>The scripts <code>./dgp</code> delegates to &mdash; <code>postgres.sh</code>, <code>app.sh</code>, <code>cert.sh</code>, <code>all.sh</code>. Each takes the same five verbs and can be driven directly; <a href="install.html#script-behaviour">install.html</a> explains how they behave</td></tr>
+        <tr><td><code>build.sh --help</code></td><td>Cuts a new release from a source tree. Only relevant if you are producing releases rather than installing them</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="note">
+      <div class="note-title">The API documents itself</div>
+      <p>With <code>DGP_DOCS_ENABLED</code> on (the installer&rsquo;s default), the running application
+      serves interactive API documentation at <code>/docs</code>, ReDoc at <code>/redoc</code> and the raw
+      OpenAPI schema at <code>/openapi.json</code> &mdash; generated from the code, so it cannot fall out of
+      step with the endpoints. On a default install that is
+      <code>http://127.0.0.1:8080/docs</code>. Turn it off and all three return 404; the routes are not
+      registered at all, not merely hidden.</p>
     </div>
 
     <h2 id="glossary">Glossary</h2>
@@ -543,7 +524,7 @@ services/all.sh stop       # frontend → backend → postgres
     </div>
 
     <div class="footer">
-      <span>DataGovern — open-source data &amp; AI governance.</span>
+      <span>DataMind Twinfold — data &amp; AI governance.</span>
       <span>Documentation for the Phase&nbsp;1 catalog.</span>
     </div>
 

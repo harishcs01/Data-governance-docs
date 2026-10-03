@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Using the product — DataGovern Documentation</title>
-<meta name="description" content="Task-by-task guide to DataGovern: first run, registering data and AI assets, relating them, searching, exporting, change requests, audit and per-role routines.">
+<title>Using the product — DataMind Twinfold</title>
+<meta name="description" content="Task-by-task guide to DataMind Twinfold: first run, registering data and AI assets, relating them, searching, exporting, change requests, audit and per-role routines.">
 <link rel="stylesheet" href="assets/docs.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
 </head>
@@ -12,13 +12,12 @@
 
 <header class="topbar">
   <button class="icon-btn menu-btn" data-menu-toggle aria-expanded="false" aria-label="Open navigation">☰</button>
-  <a class="brand" href="index.html"><span class="mark">DG</span> DataGovern <small>Documentation</small></a>
+  <a class="brand" href="index.html"><span class="mark">DT</span> DataMind Twinfold <small>Documentation</small></a>
   <nav class="topnav">
     <a href="index.html">Overview</a>
     <a href="install.html">Install &amp; operate</a>
     <a href="features.html">Features</a>
     <a href="usage.html" aria-current="page">Using the product</a>
-    <a href="../README.md">README</a>
     <button class="icon-btn" data-theme-toggle type="button">☾</button>
   </nav>
 </header>
@@ -77,7 +76,7 @@
 
   <main class="content">
 
-    <h1>Using DataGovern</h1>
+    <h1>Using DataMind Twinfold</h1>
     <p class="lede">A task-by-task guide: get signed in, put a real estate into the catalog, connect the
     AI half to the data half, and then run the thing day to day — searching, requesting, reviewing and
     answering audit questions.</p>
@@ -89,37 +88,46 @@
     <h2 id="first-run">First run</h2>
 
     <ol class="steps">
-      <li><strong>Start the three services.</strong> From the repository root:
-        <pre><code>services/all.sh start
-services/all.sh status   # confirm postgres, backend and frontend are up</code></pre>
-        The first backend start creates the tables, builds the search indexes, seeds the sixteen steward
-        roles, seeds the default administrator and seeds the 141 relationship types. It takes a few
-        seconds longer than later starts.</li>
+      <li><strong>Confirm it is up.</strong> From the installation directory:
+        <pre><code>./dgp status     # both services UP, and the application "ready"
+./dgp health     # readiness and version, from the running server</code></pre>
+        The installer already started it and signed in once to prove the whole chain works, so this is a
+        confirmation rather than a step. If anything is down, <code>./dgp start</code>, then
+        <code>./dgp doctor</code> if it does not come up.</li>
 
-      <li><strong>Open the application.</strong> On the development stack that is
-      <code>http://localhost:3000</code>; on a deployment it is the address
-      <a href="install.html#install">the installer printed</a>, <code>http://127.0.0.1:8080</code> by
-      default. <code>./dgp status</code> will tell you if you have forgotten.</li>
+      <li><strong>Open the application</strong> at the address the installer printed —
+        <code>http://127.0.0.1:8080</code> by default, or <code>https://…:8443</code> if you enabled
+        HTTPS. <code>./dgp version</code> prints it if you have forgotten. With a self-signed
+        certificate the browser warns once; accept it.</li>
 
-      <li><strong>Sign in</strong> with <code>admin@datagovern.com</code> / <code>admin123</code>.
-        You land on the dashboard with every count at zero.</li>
+      <li><strong>Sign in</strong> as the administrator the installer created — the email you gave it,
+        and the password you chose or it generated. You land on the dashboard with every count at
+        zero.</li>
 
-      <li><strong>Create your own administrator account immediately.</strong> People → Add Person →
-        role <strong>Admin</strong>. Sign out, sign back in as yourself.</li>
+      <li><strong>Set a password you chose, if the installer generated one.</strong>
+        <pre><code>./dgp passwd your.admin@example.com</code></pre>
+        It asks twice, does not echo, and refuses anything under eight characters. Then blank
+        <code>DGP_ADMIN_PASSWORD</code> in <code>.env</code> — it is read only to seed the first
+        administrator when none exists, so removing it changes nothing about how the platform runs.</li>
 
-      <li><strong>Retire the seeded account.</strong> Open <code>admin@datagovern.com</code> from the
-        People page and set its status to <strong>Inactive</strong>, or delete it. An inactive account is
-        refused at sign-in.</li>
+      <li><strong>Create a second administrator.</strong> People → Add Person → role
+        <strong>Admin</strong>. One locked-out account should not be a crisis, and there is no
+        self-service password reset in the interface yet.</li>
+
+      <li><strong>Take the first backup</strong>, and check that you can put it somewhere else:
+        <pre><code>./dgp backup</code></pre>
+        A dump beside the database it protects is not a backup. This is the point to decide where they
+        go and to schedule it.</li>
     </ol>
 
-    <div class="note danger">
-      <div class="note-title">Do step 4 and 5 before anyone else has the URL</div>
-      <p>The seeded credentials are in the source code and in this documentation. They exist so a fresh
-      database is usable, not so a shared instance can run on them. While you are there, make sure
-      <code>SECRET_KEY</code> and <code>DATABASE_URL</code> are being supplied from the environment
-      rather than taking their development defaults.</p>
+    <div class="note warn">
+      <div class="note-title">Before anyone else has the URL</div>
+      <p>Do steps 4 and 5. Then two more things worth five minutes: if the platform is reachable from
+      the network (<code>DGP_HOST=0.0.0.0</code>), turn on HTTPS with <code>./dgp https on</code> so
+      passwords do not cross it in clear text, and narrow <code>DGP_TRUSTED_HOSTS</code> from
+      <code>*</code> to the hostnames it is actually reached by. Both are described under
+      <a href="install.html#config">configuration</a>.</p>
     </div>
-
     <h2 id="tour">Finding your way around</h2>
 
     <div class="table-wrap">
@@ -588,7 +596,7 @@ services/all.sh status   # confirm postgres, backend and frontend are up</code><
       <li><strong>Search enum values directly.</strong> <code>quarantined</code>, <code>qdrant</code>,
       <code>autonomous</code>, <code>vllm</code> and <code>service_account</code> all match.</li>
       <li><strong>Search people.</strong> <code>type:steward</code> or just a name; email addresses match
-      on any fragment, so <code>datagovern.com</code> finds everyone on that domain.</li>
+      on any fragment, so <code>example.com</code> finds everyone on that domain.</li>
       <li><strong>Use the chips.</strong> Per-type counts sit above the results; clicking one filters
       without retyping.</li>
       <li><strong>Watch for "matched on".</strong> A glossary term found through a synonym or
@@ -797,7 +805,7 @@ services/all.sh status   # confirm postgres, backend and frontend are up</code><
       refused at sign-in while its history stays intact.</li>
       <li><strong>Passwords are set once from the interface.</strong> There is no password field on the
       edit form and no reset flow yet. On a <em>deployment</em> the escape hatch is
-      <code>./dgp passwd someone@example.com</code>; on the development stack, recreate the account.
+      <code>./dgp passwd someone@example.com</code>, which prompts twice and never echoes.
       Nobody can read an existing password — they are bcrypt hashes.</li>
       <li><strong>Watch the startup log after any schema change.</strong> The application refuses to boot
       on an inconsistent facet registry, and the message names the problem precisely.</li>
@@ -878,29 +886,9 @@ services/all.sh status   # confirm postgres, backend and frontend are up</code><
 
     <h2 id="operating">Starting, stopping and logs</h2>
 
-    <p>Which commands you use depends on which stack you are on — and the quickest way to tell is
-    whether the directory has a <code>.env</code> (a deployment) or only <code>.env.development</code>
-    (development). The <a href="install.html">install and operate guide</a> covers both in full; this is
-    the short version.</p>
-
-    <h3 id="operating-dev">Development — three processes</h3>
-
-<pre><code>services/all.sh start        # postgres → backend → frontend
-services/all.sh status       # up/down, pid, port, health check for each
-services/all.sh logs         # tail backend and frontend together
-services/all.sh stop         # frontend → backend → postgres
-
-services/backend.sh restart          # one service at a time
-DG_RELOAD=1 services/backend.sh restart   # backend with hot reload
-</code></pre>
-
-    <p><code>start</code> is idempotent — if it is already up, it says so and exits cleanly. Each script
-    finds its service by port as well as by pidfile, so it can stop a server you started by hand in
-    another terminal. Backend and frontend logs are under <code>services/logs/</code>; PostgreSQL keeps
-    using Homebrew's own log so its history stays in one place. Ports come from <code>PG_PORT</code>,
-    <code>BACKEND_PORT</code> and <code>FRONTEND_PORT</code>, defaulting to 5432, 8000 and 3000.</p>
-
-    <h3 id="operating-deployed">A deployment — two processes</h3>
+    <p>Everything an operator does goes through one command, <code>./dgp</code>, run from the
+    installation directory. The <a href="install.html">install and operate guide</a> covers it in full;
+    this is the short version.</p>
 
 <pre><code>./dgp status                 # both services, ports, pids, and whether it is *ready*
 ./dgp start | stop | restart
@@ -910,7 +898,13 @@ DG_RELOAD=1 services/backend.sh restart   # backend with hot reload
 ./dgp help                   # everything else
 </code></pre>
 
-    <p>There is <strong>no front-end process here</strong> — the interface is compiled into
+    <p>Two services, in dependency order: <code>start</code> brings up PostgreSQL then the application,
+    <code>stop</code> reverses it. That order is not cosmetic — the application's first act is to bring
+    the schema up to date, and stopping the database first would cut it off mid-request.
+    <code>start</code> is idempotent, and waits for genuine readiness rather than reporting success when
+    the port opens.</p>
+
+    <p>There is <strong>no front-end process</strong> — the interface is compiled into
     <code>frontend/dist</code> and served by the same uvicorn that answers the API, on port 8080. So
     "is the front end up?" becomes "is the build there, and is it being served?":
     <code>curl -sI http://127.0.0.1:8080/</code> — a <code>200</code> means yes, a <code>503</code>
@@ -922,22 +916,17 @@ DG_RELOAD=1 services/backend.sh restart   # backend with hot reload
     <a href="install.html#checking-prod">checking the services</a> for what each state means and what to
     do about it.</p>
 
-    <div class="note warn">
-      <div class="note-title">If you registered PostgreSQL with brew services</div>
-      <p>launchd will restart it after <code>services/postgres.sh stop</code>. Run
-      <code>brew services stop postgresql@17</code> first — these scripts drive Postgres with
-      <code>pg_ctl</code>, not through brew services. This affects the development stack only; a
-      deployment's cluster is its own and was never registered with anything.</p>
-    </div>
+    <p>Logs live in <code>var/log</code> inside the installation directory:
+    <code>app.log</code> for the application (access lines, tracebacks and startup together) and
+    <code>postgres.log</code> for the database. Nothing rotates them for you.</p>
 
     <div class="note">
-      <div class="note-title">The two script directories are not interchangeable</div>
-      <p><code>services/</code> drives the development stack (5432 / 8000 / 3000);
-      <code>deploy/</code>, through <code>./dgp</code>, drives a deployment (55432 / 8080). They share
-      filenames and verbs deliberately, and they act on <em>different databases</em>. Running the wrong
-      one is the usual reason <code>status</code> reports DOWN for something you know is up.</p>
+      <div class="note-title">One directory, one installation</div>
+      <p><code>./dgp</code> acts only on the installation it sits in — its own <code>.env</code>, its own
+      cluster in <code>var/postgres</code>, its own ports. If <code>status</code> reports DOWN for
+      something you are sure is running, check which directory you are in before anything else; a second
+      copy installed elsewhere is a completely separate platform with its own database.</p>
     </div>
-
     <h2 id="faq">Troubleshooting and FAQ</h2>
 
     <div class="table-wrap">
@@ -962,9 +951,8 @@ DG_RELOAD=1 services/backend.sh restart   # backend with hot reload
         <tr><td><strong>The graph looks empty or truncated</strong></td><td>Empty means no relationships and no children yet. Truncated means the node cap was reached — lower the depth, or start from a more specific object.</td></tr>
         <tr><td><strong>I was signed out mid-task</strong></td><td>Tokens last eight hours; any 401 clears the session. Sign back in — nothing you had saved is lost.</td></tr>
         <tr><td><strong>"Account is inactive" at sign-in</strong></td><td>An administrator set the account inactive. Ask them to reactivate it.</td></tr>
-        <tr><td><strong>I forgot a password</strong></td><td>There is no reset flow in the interface yet, and nobody can read an existing password — they are bcrypt hashes. On a deployment an administrator runs <code>./dgp passwd &lt;email&gt;</code>; on the development stack they recreate the account.</td></tr>
+        <tr><td><strong>I forgot a password</strong></td><td>There is no reset flow in the interface yet, and nobody can read an existing password — they are bcrypt hashes. An administrator runs <code>./dgp passwd &lt;email&gt;</code> on the server, which prompts twice, refuses anything under eight characters, and refuses an email it cannot find.</td></tr>
         <tr><td><strong>The backend will not start and says the facet registry is inconsistent</strong></td><td>That guard is intentional and the message names the exact problem. It follows a change to an object type's definition; fix what it names.</td></tr>
-        <tr><td><strong>The frontend will not start, port in use</strong></td><td>The dev server uses a strict port, so it fails loudly rather than moving. Free port 3000 or set <code>FRONTEND_PORT</code>.</td></tr>
         <tr><td><strong>The dashboard counts look stale</strong></td><td>They are fetched on load. Refresh the page.</td></tr>
         <tr><td><strong>The page loads but every panel is empty or errors</strong></td><td>The application is serving while the database is not answering. <code>./dgp status</code> — if it says <em>serving but NOT ready</em>, check <code>./dgp logs postgres</code>.</td></tr>
         <tr><td><strong>The site answers 503 "The user interface has not been built"</strong></td><td>A deployment with no <code>frontend/dist</code>. <code>./dgp rebuild</code>. The API is unaffected.</td></tr>
@@ -981,10 +969,10 @@ DG_RELOAD=1 services/backend.sh restart   # backend with hot reload
       <tbody>
         <tr><td>Can I bulk import from a CSV?</td><td>Not yet — it is on the roadmap. Today it is the UI or the API. Export works already.</td></tr>
         <tr><td>Can I add my own relationship type?</td><td>Not from the interface yet. The catalogue is a database table designed for it, so it is a small change rather than an architectural one.</td></tr>
-        <tr><td>Can DataGovern scan my repository and fill the AI catalog in?</td><td>Not yet. The columns a scanner needs are already on every AI object type, waiting. The design is in <code>ai-scanner-design.md</code>.</td></tr>
+        <tr><td>Can DataMind Twinfold scan my repository and fill the AI catalog in?</td><td>Not yet. The columns a scanner needs are already on every AI object type, waiting. The design is in <code>ai-scanner-design.md</code>.</td></tr>
         <tr><td>Can I record a metric's value over time?</td><td>No — the catalog defines metrics; it does not store readings. Also on the roadmap.</td></tr>
         <tr><td>Can stewardship be per object rather than per type?</td><td>Not yet. Today a steward holds a whole type.</td></tr>
-        <tr><td>Where is the API documentation?</td><td><code>/docs</code> on whichever port the backend is on — <code>localhost:8000</code> in development, <code>127.0.0.1:8080</code> on a deployment — plus a summary in the <a href="features.html#api">feature reference</a>.</td></tr>
+        <tr><td>Where is the API documentation?</td><td><code>/docs</code> (Swagger UI), <code>/redoc</code> and <code>/openapi.json</code> on the application's own port — <code>http://127.0.0.1:8080/docs</code> by default — unless <code>DGP_DOCS_ENABLED=false</code> switched them off at install time. There is also a summary in the <a href="features.html#api">feature reference</a>.</td></tr>
         <tr><td>Can I delete a relationship type?</td><td>No. Seeded types may be relabelled — and your wording survives restarts — but never deleted, because edges point at them.</td></tr>
         <tr><td>Is anything sent outside my machine?</td><td>No. It is your browser, your backend and your PostgreSQL.</td></tr>
       </tbody>
@@ -999,7 +987,7 @@ DG_RELOAD=1 services/backend.sh restart   # backend with hot reload
     </div>
 
     <div class="footer">
-      <span>DataGovern — usage guide.</span>
+      <span>DataMind Twinfold — usage guide.</span>
       <span>Written against the Phase&nbsp;1 catalog.</span>
     </div>
 
